@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: technology-store-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    networks:
+      - technology-store-network
+
+  redis:
+    image: redis:alpine
+    container_name: technology-store-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - technology-store-network
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: technology-store-sqlserver
+    ports:
+      - "1450:1433"  # Sol taraf (1450): Host makinenin portu, Sağ taraf (1433): Container içi port
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourStrong@Passw0rd"
+      MSSQL_PID: "Developer"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - technology-store-network
+
+  # Microservices will be added here
+  # product-service:
+  #   build:
+  #     context: ./backend/src/Services/ProductService
+  #     dockerfile: Dockerfile
+  #   container_name: technology-store-product-service
+  #   ports:
+  #     - "5001:8080"
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ProductDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+  #     - RabbitMQ__Host=rabbitmq
+  #     - Redis__Configuration=redis:6379
+  #   depends_on:
+  #     - sqlserver
+  #     - rabbitmq
+  #     - redis
+  #   networks:
+  #     - technology-store-network
+
+volumes:
+  sqlserver-data:
+
+networks:
+  technology-store-network:
+    driver: bridge
