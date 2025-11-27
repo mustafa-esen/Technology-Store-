@@ -106,7 +106,7 @@ public static class LogHelper
 ╔══════════════════════════════════════════════════════════════╗
 ║  {ShutdownEmoji}  Application is shutting down gracefully...          {ShutdownEmoji}  ║
 ║  Shutdown Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}                          ║
-║  Thank you for using Identity Service! {SuccessEmoji}                   ║
+║  Thank you for using Identity Service! {SuccessEmoji}                  ║
 ╚══════════════════════════════════════════════════════════════╝";
 
         Log.Information(shutdownBanner);

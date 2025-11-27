@@ -24,7 +24,8 @@ try
 {
     LogHelper.LogStartup("Identity Service API", "1.0.0", "Development");
 
-    var builder = WebApplication.CreateBuilder(args); builder.Host.UseSerilog();
+    var builder = WebApplication.CreateBuilder(args);
+    builder.Host.UseSerilog();
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
@@ -79,22 +80,30 @@ try
     app.UseMiddleware<RequestLoggingMiddleware>();
 
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Identity Service API V1");
+        c.RoutePrefix = string.Empty; 
+    });
 
     app.UseCors();
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
 
-    app.Run();
+    LogHelper.LogSuccess("Application configured successfully!");
+    LogHelper.LogApi("Identity Service is listening on: http://localhost:5001");
+
+    await app.RunAsync();
 }
 catch (Exception ex)
 {
     LogHelper.LogError(ex, "Uygulama başlatılırken hata oluştu");
+    Log.Fatal(ex, "💥 Application start-up failed!");
     throw;
 }
 finally
 {
     LogHelper.LogShutdown();
-    Log.CloseAndFlush();
+    await Log.CloseAndFlushAsync();
 }
