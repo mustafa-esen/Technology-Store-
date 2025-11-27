@@ -16,9 +16,11 @@
 ## Geliştirme Sırası
 
 ### ✅ Faz 1 - Tamamlandı
+
 - [x] **ProductService** - CQRS, Clean Architecture, 47 Unit Test (Port: 5000)
 
 ### ✅ Faz 2 - Kimlik Doğrulama - Tamamlandı
+
 - [x] **IdentityService** - JWT Authentication, Role-based Authorization (Port: 5001)
   - Register, Login, RefreshToken endpoints
   - BCrypt password hashing
@@ -26,22 +28,25 @@
   - User roles: Admin, Customer
 
 ### 📋 Faz 3 - API Gateway ve İletişim
+
 - [ ] **ApiGateway** - Ocelot/YARP, JWT Validation, Rate Limiting
 
 ### 📋 Faz 4 - E-Ticaret Core
+
 - [ ] **BasketService** - Redis Cache, Sepet Yönetimi
 - [ ] **OrderService** - Saga Pattern, Sipariş İşleme
 - [ ] **PaymentService** - Ödeme Entegrasyonu
 
 ### 📋 Faz 5 - Destek Servisleri
+
 - [ ] **NotificationService** - Event-Driven, Email/SMS
 
 ## Servis Port Yapısı
 
-| Servis | API Port | Database Port |
-|--------|----------|---------------|
-| ProductService | 5000 | 1450 |
-| IdentityService | 5001 | 1451 |
+| Servis          | API Port | Database Port |
+| --------------- | -------- | ------------- |
+| ProductService  | 5000     | 1450          |
+| IdentityService | 5001     | 1451          |
 
 ## Swagger UI
 
