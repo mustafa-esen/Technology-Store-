@@ -4,7 +4,7 @@
 
 ### Backend (Mikroservisler)
 
-- **ApiGateway**: Tüm istekleri yönlendiren gateway
+- **ApiGateway**: Tüm istekleri yönlendiren gateway ✅ **Tamamlandı**
 - **IdentityService**: Kullanıcı kimlik doğrulama ve yetkilendirme ✅ **Tamamlandı**
 - **ProductService**: Ürün ve kategori yönetimi ✅ **Tamamlandı**
 - **BasketService**: Sepet yönetimi ve Redis cache
@@ -33,9 +33,18 @@
   - [x] Global exception handling
   - [x] 63 Unit Tests (100% pass)
 
-### 📋 Faz 3 - API Gateway ve İletişim
+### ✅ Faz 3 - API Gateway ve İletişim - Tamamlandı
 
-- [ ] **ApiGateway** - Ocelot/YARP, JWT Validation, Rate Limiting
+- [x] **ApiGateway** - Ocelot, Polly, Swagger Aggregation (Port: 5050)
+  - [x] Route yönetimi ve yönlendirme
+  - [x] Polly Circuit Breaker (3 hata → 10s break)
+  - [x] Polly Timeout (5 saniye)
+  - [x] Rate Limiting (100 istek/dakika)
+  - [x] SwaggerForOcelot (Tüm servislerin tek UI'da toplanması)
+  - [x] CORS yapılandırması
+  - [x] Serilog logging
+  - [x] Catch-all routes ({everything})
+  - [x] 3 mikroservis entegrasyonu (Product, Category, Identity)
 
 ### 📋 Faz 4 - E-Ticaret Core
 
@@ -51,11 +60,13 @@
 
 | Servis          | API Port | Database Port |
 | --------------- | -------- | ------------- |
+| ApiGateway      | 5050     | -             |
 | ProductService  | 5000     | 1450          |
 | IdentityService | 5001     | 1450          |
 
 ## Swagger UI
 
+- **API Gateway (Aggregated)**: http://localhost:5050/swagger/index.html ⭐ **Öneri: Buradan kullan!**
 - **ProductService**: http://localhost:5000
 - **IdentityService**: http://localhost:5001
 
