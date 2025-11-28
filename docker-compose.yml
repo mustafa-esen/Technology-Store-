@@ -25,8 +25,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: technology-store-sqlserver
     ports:
-      - "1450:1433"
-      - "1451:1433"
+      - "1450:1433" 
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "YourStrong@Passw0rd"

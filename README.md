@@ -5,7 +5,7 @@
 ### Backend (Mikroservisler)
 
 - **ApiGateway**: Tüm istekleri yönlendiren gateway
-- **IdentityService**: Kullanıcı kimlik doğrulama ve yetkilendirme
+- **IdentityService**: Kullanıcı kimlik doğrulama ve yetkilendirme ✅ **Tamamlandı**
 - **ProductService**: Ürün ve kategori yönetimi ✅ **Tamamlandı**
 - **BasketService**: Sepet yönetimi ve Redis cache
 - **OrderService**: Sipariş yönetimi
@@ -22,10 +22,16 @@
 ### ✅ Faz 2 - Kimlik Doğrulama - Tamamlandı
 
 - [x] **IdentityService** - JWT Authentication, Role-based Authorization (Port: 5001)
-  - Register, Login, RefreshToken endpoints
-  - BCrypt password hashing
-  - JWT token generation & validation
-  - User roles: Admin, Customer
+  - [x] Register, Login, RefreshToken endpoints
+  - [x] BCrypt password hashing
+  - [x] JWT token generation & validation
+  - [x] User roles: Admin, Customer
+  - [x] Clean Architecture (Domain, Application, Infrastructure, API)
+  - [x] CQRS with MediatR
+  - [x] FluentValidation
+  - [x] Serilog logging
+  - [x] Global exception handling
+  - [x] 63 Unit Tests (100% pass)
 
 ### 📋 Faz 3 - API Gateway ve İletişim
 
@@ -46,12 +52,12 @@
 | Servis          | API Port | Database Port |
 | --------------- | -------- | ------------- |
 | ProductService  | 5000     | 1450          |
-| IdentityService | 5001     | 1451          |
+| IdentityService | 5001     | 1450          |
 
 ## Swagger UI
 
-- **ProductService**: http://localhost:5000/swagger
-- **IdentityService**: http://localhost:5001/swagger
+- **ProductService**: http://localhost:5000
+- **IdentityService**: http://localhost:5001
 
 ### Frontend
 
@@ -90,7 +96,6 @@ npm run dev
 - Next.js 14
 - TypeScript
 - Docker
-- Kubernetes
 - RabbitMQ
 - Redis
 - Entity Framework Core
