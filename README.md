@@ -109,3 +109,13 @@ npm run dev
 - RabbitMQ
 - Redis
 - Entity Framework Core
+
+## Frontend Yol Haritası (Backend ile paralel)
+- Faz 3 uyumu: Mevcut landing + ürün listesi (ProductService API), mock ürün detayı, login/register mock, cart client-state.
+- Faz 4 uyumu: Sepet ekranını BasketService’e bağla, checkout/ödeme akışını PaymentService ile bağla, sipariş geçmişi ve detayı OrderService’ten oku, kimlik token’ını tüm çağrılara ekle.
+- Faz 5 uyumu: NotificationService ile sipariş/kampanya bildirimlerini UI’da (banner/toast) göster, e-posta/SMS durumlarını yansıt.
+
+## Frontend Durumu (ek not)
+- Hazır sayfalar: Home (landing), Products listesi (ProductService API'den `/api/products`; hata olursa mock veri), Product detail (mock), Login/Register (mock), Cart (client-state).
+- Env değişkenleri: `NEXT_PUBLIC_API_URL` (varsayılan `http://localhost:5000/api`), `NEXT_PUBLIC_IDENTITY_URL` (varsayılan `http://localhost:5001/api`).
+- Backend DB şu an ProductService için InMemory; migration ve gerçek connection string ile kalıcı DB'ye geçildiğinde frontend çağrıları aynı kalır.
