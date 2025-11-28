@@ -79,7 +79,6 @@
 ### Infrastructure
 
 - **Docker** containers
-- **Kubernetes** orchestration
 - **RabbitMQ** message broker
 - **Redis** cache
 - **PostgreSQL/SQL Server** database
