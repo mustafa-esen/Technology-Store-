@@ -79,7 +79,7 @@ public class GetBasketQueryHandlerTests
     {
         // Arrange
         var userId = "non-existent-user";
-        _basketRepository.GetBasketAsync(userId).Returns((Basket)null);
+        _basketRepository.GetBasketAsync(userId).Returns((Basket?)null);
 
         var query = new GetBasketQuery { UserId = userId };
 
