@@ -41,6 +41,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Infrastructure
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.API", "src\Services\OrderService\OrderService.API\OrderService.API.csproj", "{246D423D-52AC-4C5F-BF08-26F884D6B636}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Tests", "src\Services\OrderService\OrderService.Tests\OrderService.Tests.csproj", "{E32CDA12-6D49-409C-A11E-BED8036A0429}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -183,6 +185,18 @@ Global
 		{246D423D-52AC-4C5F-BF08-26F884D6B636}.Release|x64.Build.0 = Release|Any CPU
 		{246D423D-52AC-4C5F-BF08-26F884D6B636}.Release|x86.ActiveCfg = Release|Any CPU
 		{246D423D-52AC-4C5F-BF08-26F884D6B636}.Release|x86.Build.0 = Release|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Debug|x64.Build.0 = Debug|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Debug|x86.Build.0 = Debug|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Release|x64.ActiveCfg = Release|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Release|x64.Build.0 = Release|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Release|x86.ActiveCfg = Release|Any CPU
+		{E32CDA12-6D49-409C-A11E-BED8036A0429}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -204,5 +218,6 @@ Global
 		{898B511A-C5BD-436F-A07B-5FE43E604A6D} = {F0179C9B-A50D-0A8B-6A14-09780A289689}
 		{B4319CBF-83AB-49C8-A6A8-84FE27623F7B} = {F0179C9B-A50D-0A8B-6A14-09780A289689}
 		{246D423D-52AC-4C5F-BF08-26F884D6B636} = {F0179C9B-A50D-0A8B-6A14-09780A289689}
+		{E32CDA12-6D49-409C-A11E-BED8036A0429} = {F0179C9B-A50D-0A8B-6A14-09780A289689}
 	EndGlobalSection
 EndGlobal
