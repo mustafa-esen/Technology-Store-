@@ -98,25 +98,37 @@ services:
     networks:
       - technology-store-network
 
-  # API Gateway will be added here
-  # api-gateway:
-  #   build:
-  #     context: ./backend/src/Services/ProductService
-  #     dockerfile: Dockerfile
-  #   container_name: technology-store-product-service
-  #   ports:
-  #     - "5001:8080"
-  #   environment:
-  #     - ASPNETCORE_ENVIRONMENT=Development
-  #     - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ProductDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
-  #     - RabbitMQ__Host=rabbitmq
-  #     - Redis__Configuration=redis:6379
-  #   depends_on:
-  #     - sqlserver
-  #     - rabbitmq
-  #     - redis
-  #   networks:
-  #     - technology-store-network
+  identity-service:
+    build:
+      context: ./backend/src
+      dockerfile: Services/IdentityService/Dockerfile
+    container_name: technology-store-identity-service
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=IdentityServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+    depends_on:
+      - sqlserver
+    networks:
+      - technology-store-network
+
+  api-gateway:
+    build:
+      context: ./backend/src/ApiGateway
+      dockerfile: Dockerfile
+    container_name: technology-store-api-gateway
+    ports:
+      - "5050:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - product-service
+      - basket-service
+      - order-service
+      - identity-service
+    networks:
+      - technology-store-network
 
 volumes:
   sqlserver-data:
