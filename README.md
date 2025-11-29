@@ -32,6 +32,8 @@
   - [x] Serilog logging
   - [x] Global exception handling
   - [x] 63 Unit Tests (100% pass)
+  - [x] Docker containerization with multi-stage builds
+  - [x] Emoji logging system with startup/shutdown banners
 
 ### ✅ Faz 3 - API Gateway ve İletişim - Tamamlandı
 
@@ -45,6 +47,8 @@
   - [x] Serilog logging
   - [x] Catch-all routes ({everything})
   - [x] 3 mikroservis entegrasyonu (Product, Category, Identity)
+  - [x] Docker containerization
+  - [x] Depends on all microservices (starts last)
 
 ### ✅ Faz 4 - E-Ticaret Core - Tamamlandı
 
@@ -72,6 +76,7 @@
   - [x] Real-time data tracking via RedisInsight
   - [x] Gateway integration completed
   - [x] Docker containerization
+  - [x] Multi-stage Docker builds (.NET 9.0)
   - [x] **95 Unit Tests** (89 passed, 6 skipped) - xUnit, NSubstitute, FluentAssertions
     - Query handler tests (5 tests) - GetBasket with mapper mocking
     - Command handler tests (31 tests) - AddItem, RemoveItem, UpdateQuantity, ClearBasket
@@ -113,6 +118,8 @@
   - [x] Serilog structured logging
   - [x] Gateway integration
   - [x] Docker containerization
+  - [x] Multi-stage Docker builds (.NET 9.0)
+  - [x] AutoMapper 12.0.1 compatibility fix
 
 - [ ] **PaymentService** - Ödeme Entegrasyonu
 
@@ -175,6 +182,8 @@
 
 ### 🐳 Docker ile Tüm Sistemi Başlatma (Önerilen)
 
+Tüm mikroservisler Docker containerları içinde çalışacak şekilde yapılandırıldı. Multi-stage Docker builds kullanılarak optimize edilmiş image'lar oluşturuldu.
+
 ```bash
 # Tüm servisleri ve altyapıyı tek komutla başlat
 docker-compose up -d
@@ -186,24 +195,52 @@ docker ps
 docker-compose logs -f
 
 # Belirli servislerin loglarını izle
-docker-compose logs -f product-service basket-service order-service
+docker-compose logs -f product-service basket-service order-service identity-service api-gateway
 
 # Servisleri durdur
 docker-compose down
 
 # Servisleri durdur ve volume'ları sil
 docker-compose down -v
+
+# Tek bir servisi yeniden build et
+docker-compose up -d --build product-service
+
+# Sadece altyapı servislerini başlat
+docker-compose up -d sqlserver redis rabbitmq redisinsight
 ```
 
-**Başlatılan Servisler:**
+**🎯 Dockerize Edilmiş Tüm Servisler:**
 
-- ✅ SQL Server (Port: 1450)
-- ✅ Redis (Port: 6379)
-- ✅ RabbitMQ (Port: 5672, Management: 15672)
-- ✅ RedisInsight (Port: 5540)
-- ✅ ProductService (Port: 5000)
-- ✅ BasketService (Port: 5002)
-- ✅ OrderService (Port: 5003)
+| Servis             | Port        | Container Name                    | Image Boyutu |
+| ------------------ | ----------- | --------------------------------- | ------------ |
+| **Mikroservisler** |
+| ProductService     | 5000        | technology-store-product-service  | ~220MB       |
+| IdentityService    | 5001        | technology-store-identity-service | ~220MB       |
+| BasketService      | 5002        | technology-store-basket-service   | ~220MB       |
+| OrderService       | 5003        | technology-store-order-service    | ~220MB       |
+| ApiGateway         | 5050        | technology-store-api-gateway      | ~220MB       |
+| **Altyapı**        |
+| SQL Server 2022    | 1450        | technology-store-sqlserver        | -            |
+| Redis Alpine       | 6379        | technology-store-redis            | -            |
+| RabbitMQ           | 5672, 15672 | technology-store-rabbitmq         | -            |
+| RedisInsight       | 5540        | technology-store-redisinsight     | -            |
+
+**📦 Docker Build Stratejisi:**
+
+Tüm mikroservisler için **multi-stage builds** kullanıldı:
+
+1. **Build Stage:** `mcr.microsoft.com/dotnet/sdk:9.0` (veya 8.0) - Derleme için
+2. **Runtime Stage:** `mcr.microsoft.com/dotnet/aspnet:9.0` (veya 8.0) - Çalıştırma için
+3. **Sonuç:** ~1.2GB SDK yerine ~220MB runtime image
+
+**🔧 Docker Context Yapılandırması:**
+
+- **ProductService:** Context = `backend/src/Services` (Shared projesi yok)
+- **IdentityService:** Context = `backend/src` (Shared projesi dahil)
+- **BasketService:** Context = `backend/src` (Shared projesi dahil)
+- **OrderService:** Context = `backend/src` (Shared projesi dahil)
+- **ApiGateway:** Context = `backend/src/ApiGateway` (Standalone)
 
 ### 💻 Manuel Backend Çalıştırma (Development)
 
