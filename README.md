@@ -70,6 +70,11 @@
   - [x] Serilog with structured logging
   - [x] Real-time data tracking via RedisInsight
   - [x] Gateway integration completed
+  - [x] **95 Unit Tests** (89 passed, 6 skipped) - xUnit, NSubstitute, FluentAssertions
+    - Query handler tests (5 tests) - GetBasket with mapper mocking
+    - Command handler tests (31 tests) - AddItem, RemoveItem, UpdateQuantity, ClearBasket
+    - Validator tests (27 tests) - AddItem & UpdateQuantity validation rules
+    - Domain entity tests (32 tests) - Basket & BasketItem business logic
 - [ ] **OrderService** - Saga Pattern, Sipariş İşleme
 - [ ] **PaymentService** - Ödeme Entegrasyonu
 
