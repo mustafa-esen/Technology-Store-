@@ -141,7 +141,7 @@
 ## Swagger UI
 
 - **API Gateway (Aggregated)**: http://localhost:5050/swagger/index.html ⭐ **Öneri: Buradan kullan!**
-- **ProductService**: http://localhost:5000/ (RoutePrefix: string.Empty)
+- **ProductService**: http://localhost:5000/swagger
 - **IdentityService**: http://localhost:5001/swagger
 - **BasketService**: http://localhost:5002/swagger
 - **OrderService**: http://localhost:5003/swagger
