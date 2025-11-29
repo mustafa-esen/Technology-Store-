@@ -21,6 +21,18 @@ services:
     networks:
       - technology-store-network
 
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: technology-store-redisinsight
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight-data:/data
+    networks:
+      - technology-store-network
+    depends_on:
+      - redis
+
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: technology-store-sqlserver
@@ -57,6 +69,7 @@ services:
 
 volumes:
   sqlserver-data:
+  redisinsight-data:
 
 networks:
   technology-store-network:
