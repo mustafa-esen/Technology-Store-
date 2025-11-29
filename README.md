@@ -8,7 +8,7 @@
 - **IdentityService**: Kullanıcı kimlik doğrulama ve yetkilendirme ✅ **Tamamlandı**
 - **ProductService**: Ürün ve kategori yönetimi ✅ **Tamamlandı**
 - **BasketService**: Sepet yönetimi ve Redis cache ✅ **Tamamlandı**
-- **OrderService**: Sipariş yönetimi
+- **OrderService**: Sipariş yönetimi ✅ **Tamamlandı**
 - **PaymentService**: Ödeme işlemleri
 - **NotificationService**: E-posta ve SMS bildirimleri
 - **Shared**: Ortak kütüphaneler ve modeller
@@ -46,9 +46,10 @@
   - [x] Catch-all routes ({everything})
   - [x] 3 mikroservis entegrasyonu (Product, Category, Identity)
 
-### 📋 Faz 4 - E-Ticaret Core - Tamamlandı ✅
+### ✅ Faz 4 - E-Ticaret Core - Tamamlandı
 
 - [x] **BasketService** - Redis Cache, Sepet Yönetimi (Port: 5002)
+
   - [x] CQRS with MediatR pattern
   - [x] Clean Architecture (Domain, Application, Infrastructure, API)
   - [x] Redis cache integration (StackExchange.Redis)
@@ -65,17 +66,54 @@
     - LoggingBehavior (MediatR pipeline)
     - Repository level logging
     - Controller endpoint logging
-    - Startup/Shutdown banners
+    - Startup/Shutdown banners with emojis
   - [x] Global exception handling middleware
   - [x] Serilog with structured logging
   - [x] Real-time data tracking via RedisInsight
   - [x] Gateway integration completed
+  - [x] Docker containerization
   - [x] **95 Unit Tests** (89 passed, 6 skipped) - xUnit, NSubstitute, FluentAssertions
     - Query handler tests (5 tests) - GetBasket with mapper mocking
     - Command handler tests (31 tests) - AddItem, RemoveItem, UpdateQuantity, ClearBasket
     - Validator tests (27 tests) - AddItem & UpdateQuantity validation rules
     - Domain entity tests (32 tests) - Basket & BasketItem business logic
-- [ ] **OrderService** - Saga Pattern, Sipariş İşleme
+
+- [x] **OrderService** - Event-Driven Architecture, Sipariş Yönetimi (Port: 5003)
+
+  - [x] CQRS with MediatR pattern
+  - [x] Clean Architecture (Domain, Application, Infrastructure, API)
+  - [x] SQL Server database integration
+  - [x] Order management endpoints:
+    - CreateOrder - Sipariş oluşturma
+    - GetOrder - Sipariş detayları
+    - GetUserOrders - Kullanıcının tüm siparişleri
+    - UpdateOrderStatus - Sipariş durumu güncelleme
+    - CancelOrder - Sipariş iptali
+  - [x] Domain-Driven Design:
+    - Order aggregate root
+    - OrderItem entity
+    - Address & Money value objects
+    - OrderStatus enum (7 durum)
+  - [x] Event-Driven Architecture:
+    - RabbitMQ integration (MassTransit)
+    - OrderCreatedEvent
+    - OrderStatusChangedEvent
+    - OrderCompletedEvent
+    - OrderCancelledEvent
+  - [x] FluentValidation:
+    - Dynamic enum validation
+    - Custom business rules
+  - [x] AutoMapper 12.0.1 (version uyumluluğu)
+  - [x] Advanced logging system:
+    - LogHelper with emojis (🚀 ⚡ 💾 🐰)
+    - LoggingBehavior & ValidationBehavior
+    - Startup/Shutdown banners
+    - Timer tracking
+  - [x] Global exception handling middleware
+  - [x] Serilog structured logging
+  - [x] Gateway integration
+  - [x] Docker containerization
+
 - [ ] **PaymentService** - Ödeme Entegrasyonu
 
 ### 📋 Faz 5 - Destek Servisleri
@@ -84,27 +122,41 @@
 
 ## Servis Port Yapısı
 
-| Servis          | API Port | Database/Cache Port | UI Port |
-| --------------- | -------- | ------------------- | ------- |
-| ApiGateway      | 5050     | -                   | -       |
-| ProductService  | 5000     | 1450 (SQL Server)   | -       |
-| IdentityService | 5001     | 1450 (SQL Server)   | -       |
-| BasketService   | 5002     | 6379 (Redis)        | 5540    |
+| Servis          | API Port | Database/Cache Port | UI Port | Durum |
+| --------------- | -------- | ------------------- | ------- | ----- |
+| ApiGateway      | 5050     | -                   | -       | ✅    |
+| ProductService  | 5000     | 1450 (SQL Server)   | -       | ✅    |
+| IdentityService | 5001     | 1450 (SQL Server)   | -       | ✅    |
+| BasketService   | 5002     | 6379 (Redis)        | 5540    | ✅    |
+| OrderService    | 5003     | 1450 (SQL Server)   | -       | ✅    |
+| RabbitMQ        | 5672     | -                   | 15672   | ✅    |
 
 ## Swagger UI
 
 - **API Gateway (Aggregated)**: http://localhost:5050/swagger/index.html ⭐ **Öneri: Buradan kullan!**
-- **ProductService**: http://localhost:5000/swagger
+- **ProductService**: http://localhost:5000/ (RoutePrefix: string.Empty)
 - **IdentityService**: http://localhost:5001/swagger
 - **BasketService**: http://localhost:5002/swagger
+- **OrderService**: http://localhost:5003/swagger
 
-## Redis Yönetim Araçları
+## Yönetim Arayüzleri
+
+### Redis Yönetimi
 
 - **RedisInsight**: http://localhost:5540
   - Basket verilerini görsel olarak izleme
   - Key-value çiftlerini inceleme
   - Real-time data monitoring
   - Bağlantı ayarları: Host=`redis`, Port=`6379`
+
+### RabbitMQ Yönetimi
+
+- **RabbitMQ Management**: http://localhost:15672
+  - Kullanıcı: `admin`
+  - Şifre: `admin123`
+  - Queue monitoring
+  - Message tracking
+  - Exchange & binding yönetimi
 
 ### Frontend
 
@@ -121,26 +173,46 @@
 
 ## Başlangıç
 
-### Docker Servisleri
+### 🐳 Docker ile Tüm Sistemi Başlatma (Önerilen)
 
 ```bash
-# Tüm altyapı servislerini başlat
+# Tüm servisleri ve altyapıyı tek komutla başlat
 docker-compose up -d
 
-# Servisler:
-# - SQL Server (Port: 1450)
-# - Redis (Port: 6379)
-# - RabbitMQ (Port: 5672, Management: 15672)
-# - RedisInsight (Port: 5540)
+# Çalışan servisleri kontrol et
+docker ps
+
+# Logları izle (tüm servisler)
+docker-compose logs -f
+
+# Belirli servislerin loglarını izle
+docker-compose logs -f product-service basket-service order-service
+
+# Servisleri durdur
+docker-compose down
+
+# Servisleri durdur ve volume'ları sil
+docker-compose down -v
 ```
 
-### Backend
+**Başlatılan Servisler:**
+
+- ✅ SQL Server (Port: 1450)
+- ✅ Redis (Port: 6379)
+- ✅ RabbitMQ (Port: 5672, Management: 15672)
+- ✅ RedisInsight (Port: 5540)
+- ✅ ProductService (Port: 5000)
+- ✅ BasketService (Port: 5002)
+- ✅ OrderService (Port: 5003)
+
+### 💻 Manuel Backend Çalıştırma (Development)
 
 ```bash
 cd backend/src
 dotnet restore
 
 # Her servisi ayrı terminalde çalıştırın:
+
 # ProductService (Port: 5000)
 cd Services/ProductService/ProductService.API
 dotnet run
@@ -153,9 +225,29 @@ dotnet run
 cd Services/BasketService/BasketService.API
 dotnet run
 
+# OrderService (Port: 5003)
+cd Services/OrderService/OrderService.API
+dotnet run
+
 # API Gateway (Port: 5050) - En son başlatın
 cd ApiGateway
 dotnet run
+```
+
+### 🗄️ Veritabanı Kontrolü
+
+```powershell
+# SQL Server'a bağlan
+docker exec -it technology-store-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "YourStrong@Passw0rd" -C
+
+# Veritabanlarını listele
+SELECT name FROM sys.databases;
+GO
+
+# OrderService siparişlerini görüntüle
+USE OrderServiceDb;
+SELECT * FROM Orders ORDER BY CreatedDate DESC;
+GO
 ```
 
 ### Frontend
@@ -170,30 +262,36 @@ npm run dev
 
 ### Backend
 
-- .NET 9.0
-- Entity Framework Core
-- MediatR (CQRS)
-- FluentValidation
-- AutoMapper
-- Serilog
-- xUnit & NSubstitute (Testing)
-- Ocelot (API Gateway)
-- Polly (Resilience & Circuit Breaker)
+- **.NET 8.0 & 9.0** (ProductService: 8.0, Others: 9.0)
+- **Entity Framework Core** - ORM
+- **MediatR** - CQRS pattern implementation
+- **FluentValidation** - Request validation
+- **AutoMapper** - Object-to-object mapping
+- **Serilog** - Structured logging
+- **xUnit, NSubstitute, FluentAssertions** - Unit testing
+- **Ocelot** - API Gateway
+- **Polly** - Resilience & Circuit Breaker
+- **MassTransit** - Event-driven messaging abstraction
+- **Swashbuckle (Swagger)** - API documentation
 
 ### Database & Cache
 
-- SQL Server
-- Redis
-- RedisInsight
+- **SQL Server 2022** - Relational database
+- **Redis** - In-memory cache & data store
+- **RedisInsight** - Redis GUI client
 
 ### Message Broker
 
-- RabbitMQ
-- MassTransit (hazırlık)
+- **RabbitMQ 3-management** - Message queue
+- **MassTransit 8.5.6** - Messaging framework
 
-### DevOps
+### DevOps & Infrastructure
 
-- Docker & Docker Compose
+- **Docker** - Containerization
+- **Docker Compose** - Multi-container orchestration
+- **Multi-stage Docker builds** - Optimized image size
+- **Docker networks** - Service communication
+- **Health checks** - Container monitoring
 
 ### Frontend
 
