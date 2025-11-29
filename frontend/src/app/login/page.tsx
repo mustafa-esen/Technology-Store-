@@ -52,12 +52,30 @@ export default function LoginPage() {
 
     try {
       const res = await AuthService.login(formData);
+      // Backend response can be {accessToken, refreshToken, expiresAt, user:{id,...}}
       const token = res?.token || res?.accessToken;
+      const userId =
+        res?.userId ||
+        res?.id ||
+        res?.user?.id ||
+        res?.userId?.id ||
+        res?.user?.userId;
       if (!token) throw new Error("Token not returned");
       localStorage.setItem("token", token);
+      if (userId) {
+        localStorage.setItem("userId", userId);
+      }
+      if (res?.user?.email) {
+        localStorage.setItem("userEmail", res.user.email);
+      }
       router.push("/");
-    } catch (err) {
-      setError(t.error);
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.title ||
+        err?.response?.data?.errors?.Password?.[0] ||
+        err?.response?.data?.errors?.Email?.[0] ||
+        t.error;
+      setError(msg);
     } finally {
       setLoading(false);
     }

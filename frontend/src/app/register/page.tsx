@@ -12,7 +12,8 @@ const texts = {
     title: "Create your account",
     subtitle: "Already have an account?",
     signIn: "Sign in",
-    name: "Full name",
+    firstName: "First name",
+    lastName: "Last name",
     email: "Email address",
     password: "Password",
     confirm: "Confirm password",
@@ -26,7 +27,8 @@ const texts = {
     title: "Hesap oluştur",
     subtitle: "Zaten hesabın var mı?",
     signIn: "Giriş yap",
-    name: "Ad Soyad",
+    firstName: "Ad",
+    lastName: "Soyad",
     email: "E-posta adresi",
     password: "Şifre",
     confirm: "Şifreyi doğrula",
@@ -43,7 +45,8 @@ export default function RegisterPage() {
   const { lang } = useLang("en");
   const t = texts[lang];
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -68,14 +71,38 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await AuthService.register({
-        name: formData.name,
+      const res = await AuthService.register({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
         email: formData.email,
         password: formData.password,
       });
-      router.push("/login");
+
+      // Eğer API token ve userId döndürüyorsa direkt giriş yap
+      const token = res?.token || res?.accessToken;
+      const userId = res?.userId || res?.id || res?.user?.id;
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+      if (userId) {
+        localStorage.setItem("userId", userId);
+      }
+      if (res?.user?.email) {
+        localStorage.setItem("userEmail", res.user.email);
+      }
+
+      router.push(token ? "/" : "/login");
     } catch (err) {
-      setError(t.errorGeneral);
+      // Backend validation mesajını göster
+      const msg =
+        (err as any)?.response?.data?.errors?.Password?.[0] ||
+        (err as any)?.response?.data?.errors?.Email?.[0] ||
+        (err as any)?.response?.data?.errors?.FirstName?.[0] ||
+        (err as any)?.response?.data?.errors?.LastName?.[0] ||
+        (err as any)?.response?.data?.title ||
+        (err as any)?.message ||
+        t.errorGeneral;
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -103,20 +130,37 @@ export default function RegisterPage() {
             </div>
           )}
           <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="name" className="sr-only">
-                {t.name}
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="block w-full px-3 py-2 border border-white/10 bg-slate-900/70 placeholder-slate-400 text-white rounded-md focus:outline-none focus:ring-cyan-400 focus:border-cyan-400 sm:text-sm"
-                placeholder={t.name}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="firstName" className="sr-only">
+                  {t.firstName}
+                </label>
+                <input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  required
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  className="block w-full px-3 py-2 border border-white/10 bg-slate-900/70 placeholder-slate-400 text-white rounded-md focus:outline-none focus:ring-cyan-400 focus:border-cyan-400 sm:text-sm"
+                  placeholder={t.firstName}
+                />
+              </div>
+              <div>
+                <label htmlFor="lastName" className="sr-only">
+                  {t.lastName}
+                </label>
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  required
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  className="block w-full px-3 py-2 border border-white/10 bg-slate-900/70 placeholder-slate-400 text-white rounded-md focus:outline-none focus:ring-cyan-400 focus:border-cyan-400 sm:text-sm"
+                  placeholder={t.lastName}
+                />
+              </div>
             </div>
             <div>
               <label htmlFor="email" className="sr-only">

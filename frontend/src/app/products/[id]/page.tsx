@@ -3,8 +3,8 @@
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Star, ShoppingCart, Heart, Share2, Truck, Shield, ArrowLeft, Check, ChevronRight, Zap, Award } from "lucide-react";
-import { ProductService } from "@/services/api";
+import { Star, ShoppingCart, Heart, Share2, Truck, Shield, ArrowLeft, Check, ChevronRight, Zap, Award, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { BasketService, ProductService } from "@/services/api";
 import { useLang } from "@/hooks/useLang";
 
 interface Product {
@@ -65,6 +65,9 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description");
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>("");
+  const [adding, setAdding] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -86,7 +89,35 @@ export default function ProductDetailPage() {
       }
     };
     fetchProduct();
+
+    if (typeof window !== "undefined") {
+      const uid = localStorage.getItem("userId") || "";
+      setUserId(uid);
+    }
   }, [productId]);
+
+  const handleAddToCart = async () => {
+    setInfo(null);
+    setError(null);
+    if (!userId || !product) {
+      setInfo(lang === "tr" ? "Sepete eklemek için giriş yap" : "Login to add to cart");
+      return;
+    }
+    setAdding(true);
+    try {
+      await BasketService.addItem(userId, {
+        productId,
+        productName: product.name,
+        price: product.price,
+        quantity,
+      });
+      setInfo(lang === "tr" ? "Ürün sepete eklendi" : "Added to cart");
+    } catch (err) {
+      setError(lang === "tr" ? "Sepete eklenemedi" : "Could not add to cart");
+    } finally {
+      setAdding(false);
+    }
+  };
 
   if (error) {
     return (
@@ -131,6 +162,18 @@ export default function ProductDetailPage() {
       </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {info && (
+          <div className="mb-4 flex items-center gap-2 text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-md px-3 py-2">
+            <CheckCircle2 className="h-4 w-4" />
+            <span>{info}</span>
+          </div>
+        )}
+        {error && (
+          <div className="mb-4 flex items-center gap-2 text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+            <AlertCircle className="h-4 w-4" />
+            <span>{error}</span>
+          </div>
+        )}
         {/* Back Button */}
         <Link
           href="/products"
@@ -236,9 +279,22 @@ export default function ProductDetailPage() {
               </div>
 
               <div className="flex gap-4">
-                <button className="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                  <ShoppingCart className="h-6 w-6" />
-                  Add to Cart
+                <button
+                  onClick={handleAddToCart}
+                  disabled={adding}
+                  className="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50"
+                >
+                  {adding ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      {lang === "tr" ? "Ekleniyor..." : "Adding..."}
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="h-6 w-6" />
+                      {lang === "tr" ? "Sepete Ekle" : "Add to Cart"}
+                    </>
+                  )}
                 </button>
                 <button className="px-6 py-4 border-2 border-white/10 rounded-xl hover:border-red-500 hover:bg-red-500/10 transition-all group">
                   <Heart className="h-6 w-6 text-slate-200 group-hover:text-red-500 group-hover:fill-red-500 transition-all" />

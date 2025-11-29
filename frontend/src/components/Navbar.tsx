@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Menu, X, User } from "lucide-react";
+import { ShoppingCart, Menu, X, User, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/hooks/useLang";
@@ -10,12 +10,15 @@ export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [theme, setTheme] = useState<"dark" | "light">("dark");
     const { lang, setLang } = useLang("en");
+    const [isAuthed, setIsAuthed] = useState(false);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
 
     const applyTheme = (nextTheme: "dark" | "light") => {
         setTheme(nextTheme);
         if (typeof document === "undefined") return;
         document.body.classList.remove("theme-dark", "theme-light");
         document.body.classList.add(nextTheme === "dark" ? "theme-dark" : "theme-light");
+        document.documentElement.classList.toggle("dark", nextTheme === "dark");
         localStorage.setItem("theme", nextTheme);
     };
 
@@ -25,7 +28,22 @@ export function Navbar() {
         setTheme(storedTheme);
         document.body.classList.remove("theme-dark", "theme-light");
         document.body.classList.add(storedTheme === "dark" ? "theme-dark" : "theme-light");
+        document.documentElement.classList.toggle("dark", storedTheme === "dark");
+
+        const token = localStorage.getItem("token");
+        const email = localStorage.getItem("userEmail");
+        setIsAuthed(!!token);
+        setUserEmail(email);
     }, []);
+
+    const handleLogout = () => {
+        if (typeof window === "undefined") return;
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userEmail");
+        setIsAuthed(false);
+        setUserEmail(null);
+    };
 
     const navClass =
         theme === "dark"
@@ -52,9 +70,13 @@ export function Navbar() {
                             <Link href="/products" className={linkClass}>
                                 Products
                             </Link>
-                            <Link href="/login" className={linkClass}>
-                                Login
-                            </Link>
+                            {isAuthed ? (
+                                <span className={linkClass}>{userEmail ?? "Account"}</span>
+                            ) : (
+                                <Link href="/login" className={linkClass}>
+                                    Login
+                                </Link>
+                            )}
                         </div>
                     </div>
                     <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
@@ -91,15 +113,28 @@ export function Navbar() {
                         >
                             <ShoppingCart className="h-6 w-6" />
                         </Link>
-                        <Link
-                            href="/login"
-                            className={cn(
-                                "p-2 transition-colors",
-                                theme === "dark" ? "text-slate-200 hover:text-cyan-300" : "text-slate-800 hover:text-cyan-700"
-                            )}
-                        >
-                            <User className="h-6 w-6" />
-                        </Link>
+                        {isAuthed ? (
+                            <button
+                                onClick={handleLogout}
+                                className={cn(
+                                    "p-2 transition-colors",
+                                    theme === "dark" ? "text-slate-200 hover:text-red-300" : "text-slate-800 hover:text-red-700"
+                                )}
+                                title="Logout"
+                            >
+                                <LogOut className="h-6 w-6" />
+                            </button>
+                        ) : (
+                            <Link
+                                href="/login"
+                                className={cn(
+                                    "p-2 transition-colors",
+                                    theme === "dark" ? "text-slate-200 hover:text-cyan-300" : "text-slate-800 hover:text-cyan-700"
+                                )}
+                            >
+                                <User className="h-6 w-6" />
+                            </Link>
+                        )}
                     </div>
                     <div className="-mr-2 flex items-center sm:hidden">
                         <button
@@ -183,17 +218,31 @@ export function Navbar() {
                     >
                         Cart
                     </Link>
-                    <Link
-                        href="/login"
-                        className={cn(
-                            "border-transparent block pl-3 pr-4 py-2 border-l-4 text-base font-medium",
-                            theme === "dark"
-                                ? "text-slate-300 hover:bg-slate-800 hover:border-cyan-300 hover:text-white"
-                                : "text-slate-800 hover:bg-slate-100 hover:border-cyan-600 hover:text-slate-900"
-                        )}
-                    >
-                        Login
-                    </Link>
+                    {isAuthed ? (
+                        <button
+                            onClick={handleLogout}
+                            className={cn(
+                                "border-transparent block pl-3 pr-4 py-2 border-l-4 text-base font-medium w-full text-left",
+                                theme === "dark"
+                                    ? "text-slate-300 hover:bg-slate-800 hover:border-red-400 hover:text-white"
+                                    : "text-slate-800 hover:bg-slate-100 hover:border-red-500 hover:text-slate-900"
+                            )}
+                        >
+                            Logout
+                        </button>
+                    ) : (
+                        <Link
+                            href="/login"
+                            className={cn(
+                                "border-transparent block pl-3 pr-4 py-2 border-l-4 text-base font-medium",
+                                theme === "dark"
+                                    ? "text-slate-300 hover:bg-slate-800 hover:border-cyan-300 hover:text-white"
+                                    : "text-slate-800 hover:bg-slate-100 hover:border-cyan-600 hover:text-slate-900"
+                            )}
+                        >
+                            Login
+                        </Link>
+                    )}
                 </div>
             </div>
         </nav>

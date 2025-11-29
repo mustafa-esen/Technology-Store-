@@ -1,8 +1,8 @@
 "use client";
 
-import { ProductService } from "@/services/api";
-import { useEffect, useState } from "react";
-import { Search, Filter, Grid3x3, List, ShoppingCart } from "lucide-react";
+import { BasketService, ProductService } from "@/services/api";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Filter, Grid3x3, List, ShoppingCart, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useLang } from "@/hooks/useLang";
 
@@ -47,6 +47,9 @@ export default function ProductsPage() {
     const [sortBy, setSortBy] = useState("featured");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [error, setError] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string>("");
+    const [addingId, setAddingId] = useState<string | null>(null);
+    const [info, setInfo] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -64,6 +67,11 @@ export default function ProductsPage() {
         };
 
         fetchProducts();
+
+        if (typeof window !== "undefined") {
+            const uid = localStorage.getItem("userId") || "";
+            setUserId(uid);
+        }
     }, []);
 
     const categories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
@@ -89,6 +97,29 @@ export default function ProductsPage() {
         }
     });
 
+    const handleAddToCart = async (product: Product) => {
+        setInfo(null);
+        setError(null);
+        if (!userId) {
+            setInfo(lang === "tr" ? "Sepete eklemek için giriş yap" : "Login to add to cart");
+            return;
+        }
+        setAddingId(product.id);
+        try {
+            await BasketService.addItem(userId, {
+                productId: product.id,
+                productName: product.name,
+                price: product.price,
+                quantity: 1,
+            });
+            setInfo(lang === "tr" ? "Ürün sepete eklendi" : "Added to cart");
+        } catch (err) {
+            setError(lang === "tr" ? "Sepete eklenemedi" : "Could not add to cart");
+        } finally {
+            setAddingId(null);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12">
@@ -99,6 +130,18 @@ export default function ProductsPage() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {info && (
+                    <div className="mb-4 flex items-center gap-2 text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-md px-3 py-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>{info}</span>
+                    </div>
+                )}
+                {error && (
+                    <div className="mb-4 flex items-center gap-2 text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{error}</span>
+                    </div>
+                )}
                 <div className="bg-slate-900/80 backdrop-blur border border-white/10 rounded-xl shadow-sm p-6 mb-8 space-y-4 text-white card-surface">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="md:col-span-2 relative">
@@ -182,7 +225,14 @@ export default function ProductsPage() {
 
                                     <div className="flex items-center justify-between">
                                         <span className="text-2xl font-black text-cyan-300">${product.price.toFixed(2)}</span>
-                                        <button className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                void handleAddToCart(product);
+                                            }}
+                                            className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                            disabled={addingId === product.id}
+                                        >
                                             <ShoppingCart className="h-5 w-5" />
                                         </button>
                                     </div>
@@ -209,9 +259,16 @@ export default function ProductsPage() {
                                     </div>
                                     <div className="text-right ml-6">
                                         <p className="text-3xl font-black text-cyan-300 mb-4">${product.price.toFixed(2)}</p>
-                                        <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2">
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                void handleAddToCart(product);
+                                            }}
+                                            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
+                                            disabled={addingId === product.id}
+                                        >
                                             <ShoppingCart className="h-5 w-5" />
-                                            Add to Cart
+                                            {lang === "tr" ? "Sepete Ekle" : "Add to Cart"}
                                         </button>
                                     </div>
                                 </div>

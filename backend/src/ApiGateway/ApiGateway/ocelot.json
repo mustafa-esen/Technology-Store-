@@ -5,8 +5,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5000
+          "Host": "product-service",
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/api/products/{everything}",
@@ -25,8 +25,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5000
+          "Host": "product-service",
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/api/categories/{everything}",
@@ -45,8 +45,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "identity-service",
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/api/auth/{everything}",
@@ -59,8 +59,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5002
+          "Host": "basket-service",
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/api/baskets/{everything}",
@@ -79,8 +79,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5003
+          "Host": "order-service",
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/api/orders/{everything}",
