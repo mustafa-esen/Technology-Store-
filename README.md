@@ -120,6 +120,11 @@
   - [x] Docker containerization
   - [x] Multi-stage Docker builds (.NET 9.0)
   - [x] AutoMapper 12.0.1 compatibility fix
+  - [x] **84 Unit Tests** (100% pass) - xUnit, NSubstitute, FluentAssertions
+    - Domain entity tests (16 tests) - Order, OrderItem, Address business logic
+    - Command handler tests (20 tests) - CreateOrder (8), UpdateOrderStatus (7), CancelOrder (5)
+    - Query handler tests (6 tests) - GetOrder, GetUserOrders with mapper mocking
+    - Validator tests (42 tests) - CreateOrder & UpdateOrderStatus validation rules
 
 - [ ] **PaymentService** - Ödeme Entegrasyonu
 
