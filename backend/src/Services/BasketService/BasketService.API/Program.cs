@@ -11,6 +11,7 @@ using StackExchange.Redis;
 using System.Diagnostics;
 using System.Reflection;
 using TechnologyStore.Shared.Constants;
+using TechnologyStore.Shared.Events.Baskets;
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
@@ -101,6 +102,18 @@ try
             {
                 h.Username(rabbitMqUsername);
                 h.Password(rabbitMqPassword);
+            });
+
+            // IBasketCheckoutEvent için exchange ve routing key yapılandırması
+            cfg.Message<IBasketCheckoutEvent>(e => e.SetEntityName(RabbitMqConstants.BasketExchange));
+            cfg.Publish<IBasketCheckoutEvent>(e =>
+            {
+                e.ExchangeType = "topic"; // Topic exchange kullan
+            });
+
+            cfg.Send<IBasketCheckoutEvent>(e =>
+            {
+                e.UseRoutingKeyFormatter(context => RabbitMqConstants.BasketCheckoutRoutingKey);
             });
 
             cfg.ConfigureEndpoints(context);
