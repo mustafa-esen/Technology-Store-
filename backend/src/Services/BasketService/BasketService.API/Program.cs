@@ -5,10 +5,12 @@ using BasketService.Application.Mappings;
 using BasketService.Infrastructure.Repositories;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using MassTransit;
 using Serilog;
 using StackExchange.Redis;
 using System.Diagnostics;
 using System.Reflection;
+using TechnologyStore.Shared.Constants;
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
@@ -82,6 +84,29 @@ try
     LogHelper.LogProcess("Registering Repositories...");
     builder.Services.AddScoped<IBasketRepository, BasketRepository>();
     LogHelper.LogPackage("BasketRepository", "Registered");
+
+    // MassTransit & RabbitMQ
+    LogHelper.LogProcess("Configuring MassTransit & RabbitMQ...");
+    builder.Services.AddMassTransit(x =>
+    {
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            var rabbitMqHost = builder.Configuration.GetValue<string>("RabbitMQ:Host") ?? "localhost";
+            var rabbitMqPort = builder.Configuration.GetValue<int>("RabbitMQ:Port");
+            if (rabbitMqPort == 0) rabbitMqPort = 5672;
+            var rabbitMqUsername = builder.Configuration.GetValue<string>("RabbitMQ:Username") ?? "guest";
+            var rabbitMqPassword = builder.Configuration.GetValue<string>("RabbitMQ:Password") ?? "guest";
+
+            cfg.Host(rabbitMqHost, (ushort)rabbitMqPort, RabbitMqConstants.DefaultVirtualHost, h =>
+            {
+                h.Username(rabbitMqUsername);
+                h.Password(rabbitMqPassword);
+            });
+
+            cfg.ConfigureEndpoints(context);
+        });
+    });
+    LogHelper.LogPackage("MassTransit with RabbitMQ", "Registered");
 
     // CORS
     LogHelper.LogProcess("Configuring CORS...");

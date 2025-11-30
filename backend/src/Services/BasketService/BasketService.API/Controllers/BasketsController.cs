@@ -1,10 +1,12 @@
 using BasketService.Application.Features.Baskets.Commands.AddItemToBasket;
+using BasketService.Application.Features.Baskets.Commands.CheckoutBasket;
 using BasketService.Application.Features.Baskets.Commands.ClearBasket;
 using BasketService.Application.Features.Baskets.Commands.RemoveItemFromBasket;
 using BasketService.Application.Features.Baskets.Commands.UpdateItemQuantity;
 using BasketService.Application.Features.Baskets.Queries.GetBasket;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using TechnologyStore.Shared.Events.Baskets;
 
 namespace BasketService.API.Controllers;
 
@@ -83,18 +85,13 @@ public class BasketsController : ControllerBase
     }
 
     [HttpPut("{userId}/items/{productId}")]
-    public async Task<IActionResult> UpdateItemQuantity(string userId, Guid productId, [FromBody] UpdateItemQuantityRequest request)
+    public async Task<IActionResult> UpdateItemQuantity(string userId, Guid productId, [FromBody] UpdateItemQuantityCommand command)
     {
         _logger.LogInformation("🔄 PUT request to update item quantity for user: {UserId}, Product: {ProductId}, NewQuantity: {Quantity}",
-            userId, productId, request.Quantity);
+            userId, productId, command.Quantity);
 
-        var command = new UpdateItemQuantityCommand
-        {
-            UserId = userId,
-            ProductId = productId,
-            Quantity = request.Quantity
-        };
-
+        command.UserId = userId;
+        command.ProductId = productId;
         var result = await _mediator.Send(command);
 
         if (result)
@@ -124,6 +121,22 @@ public class BasketsController : ControllerBase
         _logger.LogWarning("⚠️ Basket not found for user: {UserId}", userId);
         return NotFound(new { message = "Basket not found" });
     }
-}
 
-public record UpdateItemQuantityRequest(int Quantity);
+    [HttpPost("{userId}/checkout")]
+    public async Task<IActionResult> CheckoutBasket(string userId, [FromBody] CheckoutBasketCommand command)
+    {
+        _logger.LogInformation("💳 POST request to checkout basket for user: {UserId}", userId);
+
+        command.UserId = userId;
+        var result = await _mediator.Send(command);
+
+        if (result)
+        {
+            _logger.LogInformation("✅ Basket checkout successful for user: {UserId}", userId);
+            return Ok(new { message = "Basket checkout successful, order is being processed" });
+        }
+
+        _logger.LogWarning("⚠️ Basket checkout failed for user: {UserId}", userId);
+        return BadRequest(new { message = "Basket checkout failed. Basket might be empty or not found." });
+    }
+}
