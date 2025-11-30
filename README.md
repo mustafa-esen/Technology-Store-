@@ -11,7 +11,7 @@
 - **OrderService**: Sipariş yönetimi ✅ **Tamamlandı**
 - **PaymentService**: Ödeme işlemleri
 - **NotificationService**: E-posta ve SMS bildirimleri
-- **Shared**: Ortak kütüphaneler ve modeller
+- **Shared**: Ortak kütüphaneler, event interface'leri ve RabbitMQ sabitleri ✅ **Tamamlandı**
 
 ## Geliştirme Sırası
 
@@ -64,8 +64,14 @@
     - UpdateItemQuantity - Ürün miktarı güncelleme
     - RemoveItemFromBasket - Ürün silme
     - ClearBasket - Sepeti temizleme
+    - **CheckoutBasket** - Sepet onaylama ve event yayınlama 🆕
   - [x] FluentValidation with custom validators
   - [x] AutoMapper entity-DTO mapping
+  - [x] **Event-Driven Architecture:** 🆕
+    - MassTransit 8.5.6 + RabbitMQ integration
+    - IBasketCheckoutEvent publishing (anonymous type pattern)
+    - Event içeriği: UserId, UserName, TotalPrice, ShippingAddress, Items
+    - CheckoutBasket endpoint sepeti onaylar ve event yayınlar
   - [x] Comprehensive logging system:
     - LoggingBehavior (MediatR pipeline)
     - Repository level logging
@@ -99,12 +105,21 @@
     - OrderItem entity
     - Address & Money value objects
     - OrderStatus enum (7 durum)
-  - [x] Event-Driven Architecture:
-    - RabbitMQ integration (MassTransit)
-    - OrderCreatedEvent
-    - OrderStatusChangedEvent
-    - OrderCompletedEvent
-    - OrderCancelledEvent
+  - [x] **Event-Driven Architecture:** 🆕
+    - MassTransit 8.5.6 + RabbitMQ integration
+    - **BasketCheckoutConsumer** (API Layer - Consumer = Controller pattern) 🆕
+      - IBasketCheckoutEvent'i consume eder (basket-checkout-queue)
+      - Event'i MediatR command'a dönüştürür
+      - Retry policy: 3 deneme × 5 saniye
+    - **Event Publishing:**
+      - IOrderCreatedEvent - Sipariş oluşturulduğunda
+      - IOrderStatusChangedEvent - Durum değiştiğinde
+      - IOrderCompletedEvent - Sipariş tamamlandığında
+      - IOrderCancelledEvent - Sipariş iptal edildiğinde
+    - Anonymous type pattern ile event yayınlama
+  - [x] **CreateOrderCommand Factory:** 🆕
+    - FromBasketCheckoutEvent() static factory method
+    - Event → Command dönüşümü
   - [x] FluentValidation:
     - Dynamic enum validation
     - Custom business rules
@@ -114,6 +129,7 @@
     - LoggingBehavior & ValidationBehavior
     - Startup/Shutdown banners
     - Timer tracking
+    - Consumer logging (basket checkout events)
   - [x] Global exception handling middleware
   - [x] Serilog structured logging
   - [x] Gateway integration
@@ -126,7 +142,38 @@
     - Query handler tests (6 tests) - GetOrder, GetUserOrders with mapper mocking
     - Validator tests (42 tests) - CreateOrder & UpdateOrderStatus validation rules
 
+- [x] **Shared Library** - Ortak Kütüphane ve Event Definitions 🆕
+
+  - [x] **Event Interfaces:**
+    - **Basket Events:** IBasketCheckoutEvent (sepet onaylama + DTO'lar)
+    - **Order Events:** IOrderCreatedEvent, IOrderStatusChangedEvent, IOrderCompletedEvent, IOrderCancelledEvent
+    - **Payment Events (Hazır):** IPaymentRequestEvent, IPaymentSuccessEvent, IPaymentFailedEvent
+  - [x] **RabbitMQ Constants:** Queue names, connection settings, retry config (MaxRetryCount: 3)
+  - [x] **Anonymous Type Pattern:** Interface-based contracts, concrete class'lara gerek yok
+  - [x] **Servisler Arası İletişim:**
+    - BasketService → OrderService (IBasketCheckoutEvent) ✅
+    - OrderService → PaymentService (IOrderCreatedEvent - hazır)
+    - PaymentService → OrderService (IPaymentSuccess/FailedEvent - hazır)
+  - [x] .NET Standard 2.1 compatibility
+  - [x] Kullanıldığı yerler: BasketService, OrderService, PaymentService (gelecek)
+
 - [ ] **PaymentService** - Ödeme Entegrasyonu
+
+## 🔄 Event-Driven Architecture Flow
+
+### Sepet → Sipariş Akışı (Tamamlandı ✅)
+
+1. **Kullanıcı sepeti onaylar** → BasketService CheckoutBasket endpoint
+2. **BasketService** sepeti Redis'ten çeker, IBasketCheckoutEvent yayınlar (RabbitMQ'ya)
+3. **RabbitMQ** event'i basket-checkout-queue'ya iletir
+4. **OrderService** BasketCheckoutConsumer event'i consume eder
+5. **OrderService** sipariş oluşturur (SQL Server), IOrderCreatedEvent yayınlar
+6. **Sipariş başarıyla oluşturuldu**
+
+### Gelecek Event Akışları
+
+- **Sipariş → Ödeme:** OrderService IOrderCreatedEvent yayınlar → PaymentService consume eder
+- **Ödeme → Sipariş:** PaymentService IPaymentSuccessEvent/FailedEvent yayınlar → OrderService status günceller
 
 ### 📋 Faz 5 - Destek Servisleri
 
@@ -313,19 +360,23 @@ npm run dev
 - **xUnit, NSubstitute, FluentAssertions** - Unit testing
 - **Ocelot** - API Gateway
 - **Polly** - Resilience & Circuit Breaker
-- **MassTransit** - Event-driven messaging abstraction
+- **MassTransit 8.5.6** - Event-driven messaging abstraction
 - **Swashbuckle (Swagger)** - API documentation
 
 ### Database & Cache
 
 - **SQL Server 2022** - Relational database
-- **Redis** - In-memory cache & data store
+- **Redis Alpine** - In-memory cache & data store
 - **RedisInsight** - Redis GUI client
 
 ### Message Broker
 
-- **RabbitMQ 3-management** - Message queue
+- **RabbitMQ 3-management** - Message queue & event broker
 - **MassTransit 8.5.6** - Messaging framework
+  - Anonymous type event publishing
+  - Consumer pattern (API layer entry point)
+  - Retry policies & fault tolerance
+  - Exchange & queue auto-configuration
 
 ### DevOps & Infrastructure
 
