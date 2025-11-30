@@ -100,6 +100,27 @@ services:
     networks:
       - technology-store-network
 
+  payment-service:
+    build:
+      context: ./backend/src
+      dockerfile: Services/PaymentService/PaymentService.API/Dockerfile
+    container_name: technology-store-payment-service
+    ports:
+      - "5004:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PaymentServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - technology-store-network
+
   identity-service:
     build:
       context: ./backend/src
@@ -128,6 +149,7 @@ services:
       - product-service
       - basket-service
       - order-service
+      - payment-service
       - identity-service
     networks:
       - technology-store-network
