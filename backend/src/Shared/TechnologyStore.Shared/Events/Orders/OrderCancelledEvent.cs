@@ -1,9 +1,12 @@
 namespace TechnologyStore.Shared.Events.Orders;
 
-public class OrderCancelledEvent
+/// Sipariş iptal edildiğinde yayınlanan event
+/// Publisher: OrderService
+/// Consumers: NotificationService, ProductService (Stok iadesi)
+public interface IOrderCancelledEvent
 {
-    public Guid OrderId { get; set; }
-    public string UserId { get; set; } = string.Empty;
-    public string Reason { get; set; } = string.Empty;
-    public DateTime CancelledDate { get; set; }
+    Guid OrderId { get; set; }
+    string UserId { get; set; }
+    string Reason { get; set; }
+    DateTime CancelledDate { get; set; }
 }

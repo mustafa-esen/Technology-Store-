@@ -11,11 +11,14 @@ public enum OrderStatus
     Failed = 6
 }
 
-public class OrderStatusChangedEvent
+/// Sipariş durumu değiştiğinde yayınlanan event
+/// Publisher: OrderService
+/// Consumer: NotificationService
+public interface IOrderStatusChangedEvent
 {
-    public Guid OrderId { get; set; }
-    public string UserId { get; set; } = string.Empty;
-    public OrderStatus OldStatus { get; set; }
-    public OrderStatus NewStatus { get; set; }
-    public DateTime ChangedDate { get; set; }
+    Guid OrderId { get; set; }
+    string UserId { get; set; }
+    OrderStatus OldStatus { get; set; }
+    OrderStatus NewStatus { get; set; }
+    DateTime ChangedDate { get; set; }
 }

@@ -1,29 +1,38 @@
 namespace TechnologyStore.Shared.Events.Payments;
 
-public class PaymentRequestedEvent
+/// Ödeme talebi oluşturulduğunda yayınlanan event
+/// Publisher: OrderService
+/// Consumer: PaymentService
+public interface IPaymentRequestedEvent
 {
-    public Guid OrderId { get; set; }
-    public string UserId { get; set; } = string.Empty;
-    public decimal Amount { get; set; }
-    public string PaymentMethod { get; set; } = string.Empty;
-    public DateTime RequestedDate { get; set; }
+    Guid OrderId { get; set; }
+    string UserId { get; set; }
+    decimal Amount { get; set; }
+    string PaymentMethod { get; set; }
+    DateTime RequestedDate { get; set; }
 }
 
-public class PaymentCompletedEvent
+/// Ödeme başarılı olduğunda yayınlanan event
+/// Publisher: PaymentService
+/// Consumer: OrderService
+public interface IPaymentSuccessEvent
 {
-    public Guid OrderId { get; set; }
-    public string UserId { get; set; } = string.Empty;
-    public decimal Amount { get; set; }
-    public string PaymentIntentId { get; set; } = string.Empty;
-    public string PaymentMethod { get; set; } = string.Empty;
-    public DateTime CompletedDate { get; set; }
+    Guid OrderId { get; set; }
+    string UserId { get; set; }
+    decimal Amount { get; set; }
+    string PaymentIntentId { get; set; }
+    string PaymentMethod { get; set; }
+    DateTime CompletedDate { get; set; }
 }
 
-public class PaymentFailedEvent
+/// Ödeme başarısız olduğunda yayınlanan event
+/// Publisher: PaymentService
+/// Consumer: OrderService
+public interface IPaymentFailedEvent
 {
-    public Guid OrderId { get; set; }
-    public string UserId { get; set; } = string.Empty;
-    public decimal Amount { get; set; }
-    public string Reason { get; set; } = string.Empty;
-    public DateTime FailedDate { get; set; }
+    Guid OrderId { get; set; }
+    string UserId { get; set; }
+    decimal Amount { get; set; }
+    string Reason { get; set; }
+    DateTime FailedDate { get; set; }
 }
