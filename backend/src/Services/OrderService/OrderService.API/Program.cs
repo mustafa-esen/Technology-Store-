@@ -79,8 +79,10 @@ try
     LogHelper.LogMessageBus("Configuring RabbitMQ...");
     builder.Services.AddMassTransit(x =>
     {
-        // Consumer'ı kaydet
+        // Consumer'ları kaydet
         x.AddConsumer<BasketCheckoutConsumer>();
+        x.AddConsumer<PaymentSuccessConsumer>();
+        x.AddConsumer<PaymentFailedConsumer>();
 
         x.UsingRabbitMq((context, cfg) =>
         {
@@ -106,12 +108,28 @@ try
                 e.ConfigureConsumer<BasketCheckoutConsumer>(context);
             });
 
+            // PaymentSuccessConsumer için endpoint yapılandırması
+            cfg.ReceiveEndpoint(RabbitMqConstants.PaymentSuccessQueue, e =>
+            {
+                e.UseMessageRetry(r => r.Interval(RabbitMqConstants.MaxRetryCount, TimeSpan.FromSeconds(RabbitMqConstants.RetryDelaySeconds)));
+                e.ConfigureConsumer<PaymentSuccessConsumer>(context);
+            });
+
+            // PaymentFailedConsumer için endpoint yapılandırması
+            cfg.ReceiveEndpoint(RabbitMqConstants.PaymentFailedQueue, e =>
+            {
+                e.UseMessageRetry(r => r.Interval(RabbitMqConstants.MaxRetryCount, TimeSpan.FromSeconds(RabbitMqConstants.RetryDelaySeconds)));
+                e.ConfigureConsumer<PaymentFailedConsumer>(context);
+            });
+
             // Diğer endpoint'ler için otomatik yapılandırma
             cfg.ConfigureEndpoints(context);
         });
     });
     LogHelper.LogMessageBus($"RabbitMQ configured: {builder.Configuration["RabbitMQ:Host"]}");
     LogHelper.LogMessageBus($"Consumer registered: BasketCheckoutConsumer -> {RabbitMqConstants.BasketCheckoutQueue}");
+    LogHelper.LogMessageBus($"Consumer registered: PaymentSuccessConsumer -> {RabbitMqConstants.PaymentSuccessQueue}");
+    LogHelper.LogMessageBus($"Consumer registered: PaymentFailedConsumer -> {RabbitMqConstants.PaymentFailedQueue}");
 
     builder.Services.AddCors(options =>
     {

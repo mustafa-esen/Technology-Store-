@@ -71,13 +71,12 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
             // Publish PaymentSuccessEvent
             await _publishEndpoint.Publish<IPaymentSuccessEvent>(new
             {
-                PaymentId = payment.Id,
-                OrderId = payment.OrderId,
+                OrderId = Guid.Parse(payment.OrderId),
                 UserId = payment.UserId,
                 Amount = payment.Amount.Amount,
-                Currency = payment.Amount.Currency,
-                TransactionId = payment.TransactionId,
-                ProcessedDate = payment.ProcessedDate!.Value
+                PaymentIntentId = payment.TransactionId,
+                PaymentMethod = "CreditCard",
+                CompletedDate = payment.ProcessedDate!.Value
             }, cancellationToken);
 
             _logger.LogInformation("🐰 PaymentSuccessEvent published for OrderId: {OrderId}", request.OrderId);
@@ -94,13 +93,11 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
             // Publish PaymentFailedEvent
             await _publishEndpoint.Publish<IPaymentFailedEvent>(new
             {
-                PaymentId = payment.Id,
-                OrderId = payment.OrderId,
+                OrderId = Guid.Parse(payment.OrderId),
                 UserId = payment.UserId,
                 Amount = payment.Amount.Amount,
-                Currency = payment.Amount.Currency,
-                FailureReason = payment.FailureReason,
-                ProcessedDate = payment.ProcessedDate!.Value
+                Reason = payment.FailureReason,
+                FailedDate = payment.ProcessedDate!.Value
             }, cancellationToken);
 
             _logger.LogInformation("🐰 PaymentFailedEvent published for OrderId: {OrderId}", request.OrderId);
