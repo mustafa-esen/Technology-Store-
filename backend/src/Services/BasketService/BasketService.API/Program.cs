@@ -104,18 +104,7 @@ try
                 h.Password(rabbitMqPassword);
             });
 
-            // IBasketCheckoutEvent için exchange ve routing key yapılandırması
-            cfg.Message<IBasketCheckoutEvent>(e => e.SetEntityName(RabbitMqConstants.BasketExchange));
-            cfg.Publish<IBasketCheckoutEvent>(e =>
-            {
-                e.ExchangeType = "topic"; // Topic exchange kullan
-            });
-
-            cfg.Send<IBasketCheckoutEvent>(e =>
-            {
-                e.UseRoutingKeyFormatter(context => RabbitMqConstants.BasketCheckoutRoutingKey);
-            });
-
+            // MassTransit otomatik exchange oluşturacak, manuel yapılandırma gerekmiyor
             cfg.ConfigureEndpoints(context);
         });
     });

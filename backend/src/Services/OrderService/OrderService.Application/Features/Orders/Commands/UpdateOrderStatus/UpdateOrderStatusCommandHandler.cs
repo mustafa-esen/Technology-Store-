@@ -44,32 +44,30 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
         _logger.LogInformation("Order status updated successfully. OrderId: {OrderId}, OldStatus: {OldStatus}, NewStatus: {NewStatus}",
             order.Id, oldStatus, newStatus);
 
-        // Publish OrderStatusChangedEvent
-        var statusChangedEvent = new OrderStatusChangedEvent
+        // Publish IOrderStatusChangedEvent
+        await _publishEndpoint.Publish<IOrderStatusChangedEvent>(new
         {
             OrderId = order.Id,
             UserId = order.UserId,
             OldStatus = (TechnologyStore.Shared.Events.Orders.OrderStatus)Enum.Parse(typeof(TechnologyStore.Shared.Events.Orders.OrderStatus), oldStatus.ToString()),
             NewStatus = (TechnologyStore.Shared.Events.Orders.OrderStatus)Enum.Parse(typeof(TechnologyStore.Shared.Events.Orders.OrderStatus), newStatus.ToString()),
             ChangedDate = DateTime.UtcNow
-        };
+        }, cancellationToken);
 
-        await _publishEndpoint.Publish(statusChangedEvent, cancellationToken);
-        _logger.LogInformation("OrderStatusChangedEvent published. OrderId: {OrderId}", order.Id);
+        _logger.LogInformation("✅ OrderStatusChangedEvent published. OrderId: {OrderId}", order.Id);
 
-        // If order is completed, publish OrderCompletedEvent
+        // If order is completed, publish IOrderCompletedEvent
         if (newStatus == Domain.Enums.OrderStatus.Delivered)
         {
-            var completedEvent = new OrderCompletedEvent
+            await _publishEndpoint.Publish<IOrderCompletedEvent>(new
             {
                 OrderId = order.Id,
                 UserId = order.UserId,
                 TotalAmount = order.TotalAmount,
                 CompletedDate = DateTime.UtcNow
-            };
+            }, cancellationToken);
 
-            await _publishEndpoint.Publish(completedEvent, cancellationToken);
-            _logger.LogInformation("OrderCompletedEvent published. OrderId: {OrderId}", order.Id);
+            _logger.LogInformation("✅ OrderCompletedEvent published. OrderId: {OrderId}", order.Id);
         }
 
         return true;

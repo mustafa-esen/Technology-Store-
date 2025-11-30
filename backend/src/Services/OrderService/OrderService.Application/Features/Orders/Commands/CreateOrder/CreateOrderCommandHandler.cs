@@ -31,7 +31,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
 
     public async Task<OrderDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Creating new order for user: {UserId}", request.UserId);
+        _logger.LogInformation("Creating new order for user: {UserId} ({UserName})", request.UserId, request.UserName);
 
         // Create shipping address
         var shippingAddress = new Address(
@@ -66,11 +66,32 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
         _logger.LogInformation("Order created successfully. OrderId: {OrderId}, TotalAmount: {TotalAmount}",
             createdOrder.Id, createdOrder.TotalAmount);
 
-        // Publish OrderCreatedEvent
-        var orderCreatedEvent = _mapper.Map<OrderCreatedEvent>(createdOrder);
-        await _publishEndpoint.Publish(orderCreatedEvent, cancellationToken);
+        // Publish IOrderCreatedEvent (Anonymous type kullan - temiz yaklaşım)
+        await _publishEndpoint.Publish<IOrderCreatedEvent>(new
+        {
+            OrderId = createdOrder.Id,
+            UserId = createdOrder.UserId,
+            TotalAmount = createdOrder.TotalAmount,
+            Items = createdOrder.Items.Select(item => new
+            {
+                ProductId = item.ProductId,
+                ProductName = item.ProductName,
+                Quantity = item.Quantity,
+                Price = item.Price,
+                Subtotal = item.Subtotal
+            }).ToList(),
+            ShippingAddress = new
+            {
+                Street = createdOrder.ShippingAddress.Street,
+                City = createdOrder.ShippingAddress.City,
+                State = createdOrder.ShippingAddress.State,
+                ZipCode = createdOrder.ShippingAddress.ZipCode,
+                Country = createdOrder.ShippingAddress.Country
+            },
+            CreatedDate = createdOrder.CreatedDate
+        }, cancellationToken);
 
-        _logger.LogInformation("OrderCreatedEvent published for OrderId: {OrderId}", createdOrder.Id);
+        _logger.LogInformation("✅ OrderCreatedEvent published for OrderId: {OrderId}", createdOrder.Id);
 
         return _mapper.Map<OrderDto>(createdOrder);
     }

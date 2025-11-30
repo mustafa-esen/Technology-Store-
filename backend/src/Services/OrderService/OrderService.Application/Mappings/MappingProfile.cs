@@ -37,15 +37,7 @@ public class MappingProfile : Profile
 
         CreateMap<CreateAddressDto, Address>();
 
-        // Event mappings
-        CreateMap<Order, OrderCreatedEvent>()
-            .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
-            .ForMember(dest => dest.ShippingAddress, opt => opt.MapFrom(src => src.ShippingAddress));
-
-        CreateMap<OrderItem, TechnologyStore.Shared.Events.Orders.OrderItemDto>()
-            .ForMember(dest => dest.Subtotal, opt => opt.MapFrom(src => src.Subtotal));
-
-        CreateMap<Address, ShippingAddressDto>();
+        // Event mappings - Artık anonymous type kullanıyoruz, mapping'e gerek yok
+        // CreateMap<Order, IOrderCreatedEvent> kullanılmıyor
     }
 }

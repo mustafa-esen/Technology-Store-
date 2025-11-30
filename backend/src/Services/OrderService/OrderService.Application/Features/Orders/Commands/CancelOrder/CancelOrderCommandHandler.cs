@@ -46,17 +46,16 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, boo
 
         _logger.LogInformation("Order cancelled successfully. OrderId: {OrderId}", order.Id);
 
-        // Publish OrderCancelledEvent
-        var cancelledEvent = new OrderCancelledEvent
+        // Publish IOrderCancelledEvent
+        await _publishEndpoint.Publish<IOrderCancelledEvent>(new
         {
             OrderId = order.Id,
             UserId = order.UserId,
             Reason = request.CancellationReason,
             CancelledDate = DateTime.UtcNow
-        };
+        }, cancellationToken);
 
-        await _publishEndpoint.Publish(cancelledEvent, cancellationToken);
-        _logger.LogInformation("OrderCancelledEvent published. OrderId: {OrderId}", order.Id);
+        _logger.LogInformation("✅ OrderCancelledEvent published. OrderId: {OrderId}", order.Id);
 
         return true;
     }
