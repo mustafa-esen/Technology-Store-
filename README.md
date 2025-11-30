@@ -9,7 +9,7 @@
 - **ProductService**: Ürün ve kategori yönetimi ✅ **Tamamlandı**
 - **BasketService**: Sepet yönetimi ve Redis cache ✅ **Tamamlandı**
 - **OrderService**: Sipariş yönetimi ✅ **Tamamlandı**
-- **PaymentService**: Ödeme işlemleri
+- **PaymentService**: Ödeme işlemleri ✅ **Tamamlandı**
 - **NotificationService**: E-posta ve SMS bildirimleri
 - **Shared**: Ortak kütüphaneler, event interface'leri ve RabbitMQ sabitleri ✅ **Tamamlandı**
 
@@ -137,45 +137,125 @@
   - [x] Multi-stage Docker builds (.NET 9.0)
   - [x] AutoMapper 12.0.1 compatibility fix
   - [x] **84 Unit Tests** (100% pass) - xUnit, NSubstitute, FluentAssertions
+
     - Domain entity tests (16 tests) - Order, OrderItem, Address business logic
     - Command handler tests (20 tests) - CreateOrder (8), UpdateOrderStatus (7), CancelOrder (5)
     - Query handler tests (6 tests) - GetOrder, GetUserOrders with mapper mocking
     - Validator tests (42 tests) - CreateOrder & UpdateOrderStatus validation rules
 
-- [x] **Shared Library** - Ortak Kütüphane ve Event Definitions 🆕
+  - [x] **Shared Library** - Ortak Kütüphane ve Event Definitions 🆕
 
   - [x] **Event Interfaces:**
     - **Basket Events:** IBasketCheckoutEvent (sepet onaylama + DTO'lar)
     - **Order Events:** IOrderCreatedEvent, IOrderStatusChangedEvent, IOrderCompletedEvent, IOrderCancelledEvent
-    - **Payment Events (Hazır):** IPaymentRequestEvent, IPaymentSuccessEvent, IPaymentFailedEvent
+    - **Payment Events:** IPaymentSuccessEvent, IPaymentFailedEvent
   - [x] **RabbitMQ Constants:** Queue names, connection settings, retry config (MaxRetryCount: 3)
   - [x] **Anonymous Type Pattern:** Interface-based contracts, concrete class'lara gerek yok
   - [x] **Servisler Arası İletişim:**
     - BasketService → OrderService (IBasketCheckoutEvent) ✅
-    - OrderService → PaymentService (IOrderCreatedEvent - hazır)
-    - PaymentService → OrderService (IPaymentSuccess/FailedEvent - hazır)
+    - OrderService → PaymentService (IOrderCreatedEvent) ✅
+    - PaymentService → OrderService (IPaymentSuccess/FailedEvent) ✅
   - [x] .NET Standard 2.1 compatibility
-  - [x] Kullanıldığı yerler: BasketService, OrderService, PaymentService (gelecek)
+  - [x] Kullanıldığı yerler: BasketService, OrderService, PaymentService
 
-- [ ] **PaymentService** - Ödeme Entegrasyonu
+- [x] **PaymentService** - Ödeme Yönetimi ve Sahte Ödeme Gateway'i (Port: 5004)
 
-## 🔄 Event-Driven Architecture Flow
+  - [x] CQRS with MediatR pattern
+  - [x] Clean Architecture (Domain, Application, Infrastructure, API)
+  - [x] SQL Server database integration
+  - [x] Payment management endpoints:
+    - GetPayment - Ödeme detayları
+    - GetPaymentsByUserId - Kullanıcının ödemeleri
+  - [x] Domain-Driven Design:
+    - Payment aggregate root (OrderId, UserId, Amount, Status, TransactionId)
+    - Money value object (Amount + Currency)
+    - PaymentStatus enum (Pending, Processing, Success, Failed, Refunded)
+    - **Idempotency Check** - Aynı sipariş için tekrar ödeme alınmasını önler
+  - [x] **FakePaymentGateway** - Mock banka entegrasyonu 🆕
+    - %90 başarı oranı (gerçekçi senaryo)
+    - 1 saniye ağ gecikmesi simülasyonu
+    - 5 farklı hata senaryosu: "Yetersiz bakiye", "Kart reddedildi", "Geçersiz kart", "Banka zaman aşımı", "Günlük limit aşımı"
+    - Gerçek banka API'si olmadan test yapılabilir
+  - [x] **Event-Driven Architecture:** 🆕
+    - MassTransit 8.5.6 + RabbitMQ integration
+    - **OrderCreatedConsumer** (API Layer - Consumer = Controller pattern) 🆕
+      - IOrderCreatedEvent'i consume eder (order-created-queue)
+      - **Idempotency kontrolü** - Sipariş daha önce işlendiyse atla
+      - FakePaymentGateway ile ödeme işler
+      - Event'i MediatR command'a dönüştürür
+      - Retry policy: 3 deneme × 5 saniye
+    - **Event Publishing:**
+      - IPaymentSuccessEvent - Ödeme başarılı (PaymentIntentId, PaymentMethod, CompletedDate)
+      - IPaymentFailedEvent - Ödeme başarısız (Reason, FailedDate)
+    - Anonymous type pattern ile event yayınlama
+  - [x] **OrderService Payment Feedback Loop:** 🆕
+    - **PaymentSuccessConsumer** - Ödeme başarılı → Sipariş durumu "PaymentReceived" olur
+    - **PaymentFailedConsumer** - Ödeme başarısız → Sipariş durumu "Failed" olur
+    - payment-success-queue ve payment-failed-queue kuyrukları
+  - [x] FluentValidation with custom validators
+  - [x] AutoMapper 12.0.1 entity-DTO mapping
+  - [x] Advanced logging system:
+    - LogHelper with emojis (💰 💳 ⚡)
+    - LoggingBehavior & ValidationBehavior
+    - Startup/Shutdown banners
+    - Consumer logging (order created & payment result events)
+  - [x] Global exception handling middleware
+  - [x] Serilog structured logging
+  - [x] Gateway integration (hazır)
+  - [x] Docker containerization
+  - [x] Multi-stage Docker builds (.NET 9.0)
 
-### Sepet → Sipariş Akışı (Tamamlandı ✅)
+## 🔄 Event-Driven Architecture Flow (Tam Akış)
 
-1. **Kullanıcı sepeti onaylar** → BasketService CheckoutBasket endpoint
-2. **BasketService** sepeti Redis'ten çeker, IBasketCheckoutEvent yayınlar (RabbitMQ'ya)
-3. **RabbitMQ** event'i basket-checkout-queue'ya iletir
-4. **OrderService** BasketCheckoutConsumer event'i consume eder
-5. **OrderService** sipariş oluşturur (SQL Server), IOrderCreatedEvent yayınlar
-6. **Sipariş başarıyla oluşturuldu**
+### 1️⃣ Sepet → Sipariş → Ödeme → Sipariş Güncelleme (Tamamlandı ✅)
 
-### Gelecek Event Akışları
+**Başarılı Akış:**
 
-- **Sipariş → Ödeme:** OrderService IOrderCreatedEvent yayınlar → PaymentService consume eder
-- **Ödeme → Sipariş:** PaymentService IPaymentSuccessEvent/FailedEvent yayınlar → OrderService status günceller
+1. **Kullanıcı sepeti onaylar** → BasketService `POST /api/baskets/{id}/checkout`
+2. **BasketService** sepeti Redis'ten çeker, `IBasketCheckoutEvent` yayınlar → `basket-checkout-queue`
+3. **OrderService.BasketCheckoutConsumer** event'i consume eder
+4. **OrderService** sipariş oluşturur (Status: **Pending**), `IOrderCreatedEvent` yayınlar → `order-created-queue`
+5. **PaymentService.OrderCreatedConsumer** event'i consume eder
+6. **PaymentService** idempotency kontrolü yapar (aynı sipariş daha önce işlendiyse atlar)
+7. **FakePaymentGateway** ödemeyi işler (%90 başarı, 1 saniye gecikme)
+8. **Ödeme Başarılı:** `IPaymentSuccessEvent` yayınlar → `payment-success-queue`
+9. **OrderService.PaymentSuccessConsumer** event'i consume eder
+10. **OrderService** sipariş durumunu **PaymentReceived** olarak günceller
+11. ✅ **Sipariş tamamlandı - Ödeme alındı!**
 
-### 📋 Faz 5 - Destek Servisleri
+**Başarısız Akış:**
+
+1-7. Yukarıdaki adımlar aynı 8. **Ödeme Başarısız:** `IPaymentFailedEvent` yayınlar → `payment-failed-queue` (Reason: "Yetersiz bakiye" vb.) 9. **OrderService.PaymentFailedConsumer** event'i consume eder 10. **OrderService** sipariş durumunu **Failed** olarak günceller 11. ❌ **Sipariş başarısız - Ödeme alınamadı**
+
+### 2️⃣ Sipariş Durum Döngüsü
+
+```
+Pending (Ödeme bekleniyor)
+   ↓ (Ödeme başarılı)
+PaymentReceived (Ödeme alındı)
+   ↓ (Depo hazırlık)
+Processing (Sipariş hazırlanıyor)
+   ↓
+Shipped (Kargoya verildi)
+   ↓
+Delivered (Teslim edildi)
+
+   ↓ (Ödeme başarısız)
+Failed (Sipariş başarısız)
+   ↓ (İptal)
+Cancelled (İptal edildi)
+```
+
+### 3️⃣ Event Kuyrukları
+
+- **basket-checkout-queue** → BasketService → OrderService
+- **order-created-queue** → OrderService → PaymentService
+- **payment-success-queue** → PaymentService → OrderService
+- **payment-failed-queue** → PaymentService → OrderService
+
+### 4️⃣ Retry Politikası
+
+Tüm consumerlar 3 deneme × 5 saniye retry policy ile korunur.
 
 - [ ] **NotificationService** - Event-Driven, Email/SMS
 
@@ -188,6 +268,7 @@
 | IdentityService | 5001     | 1450 (SQL Server)   | -       | ✅    |
 | BasketService   | 5002     | 6379 (Redis)        | 5540    | ✅    |
 | OrderService    | 5003     | 1450 (SQL Server)   | -       | ✅    |
+| PaymentService  | 5004     | 1450 (SQL Server)   | -       | ✅    |
 | RabbitMQ        | 5672     | -                   | 15672   | ✅    |
 
 ## Swagger UI
@@ -197,6 +278,7 @@
 - **IdentityService**: http://localhost:5001/swagger
 - **BasketService**: http://localhost:5002/swagger
 - **OrderService**: http://localhost:5003/swagger
+- **PaymentService**: http://localhost:5004/swagger
 
 ## Yönetim Arayüzleri
 
@@ -271,6 +353,7 @@ docker-compose up -d sqlserver redis rabbitmq redisinsight
 | IdentityService    | 5001        | technology-store-identity-service | ~220MB       |
 | BasketService      | 5002        | technology-store-basket-service   | ~220MB       |
 | OrderService       | 5003        | technology-store-order-service    | ~220MB       |
+| PaymentService     | 5004        | technology-store-payment-service  | ~220MB       |
 | ApiGateway         | 5050        | technology-store-api-gateway      | ~220MB       |
 | **Altyapı**        |
 | SQL Server 2022    | 1450        | technology-store-sqlserver        | -            |
@@ -292,6 +375,7 @@ Tüm mikroservisler için **multi-stage builds** kullanıldı:
 - **IdentityService:** Context = `backend/src` (Shared projesi dahil)
 - **BasketService:** Context = `backend/src` (Shared projesi dahil)
 - **OrderService:** Context = `backend/src` (Shared projesi dahil)
+- **PaymentService:** Context = `backend/src` (Shared projesi dahil)
 - **ApiGateway:** Context = `backend/src/ApiGateway` (Standalone)
 
 ### 💻 Manuel Backend Çalıştırma (Development)
@@ -318,6 +402,10 @@ dotnet run
 cd Services/OrderService/OrderService.API
 dotnet run
 
+# PaymentService (Port: 5004)
+cd Services/PaymentService/PaymentService.API
+dotnet run
+
 # API Gateway (Port: 5050) - En son başlatın
 cd ApiGateway
 dotnet run
@@ -336,6 +424,11 @@ GO
 # OrderService siparişlerini görüntüle
 USE OrderServiceDb;
 SELECT * FROM Orders ORDER BY CreatedDate DESC;
+GO
+
+# PaymentService ödemelerini görüntüle
+USE PaymentServiceDb;
+SELECT * FROM Payments ORDER BY CreatedDate DESC;
 GO
 ```
 
