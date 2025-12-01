@@ -204,6 +204,11 @@
   - [x] Gateway integration (hazır)
   - [x] Docker containerization
   - [x] Multi-stage Docker builds (.NET 9.0)
+  - [x] **73 Unit Tests** (100% pass) - xUnit, NSubstitute, FluentAssertions
+    - Domain entity tests (18 tests) - Payment state machine, idempotency checks
+    - Domain value object tests (25 tests) - Money operators, validation, formatting
+    - Command handler tests (10 tests) - ProcessPayment with gateway integration, event publishing
+    - Query handler tests (20 tests) - GetPaymentById, GetPaymentsByUserId with mapper mocking
 
 ## 🔄 Event-Driven Architecture Flow (Tam Akış)
 
