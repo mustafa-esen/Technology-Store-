@@ -6,10 +6,8 @@ using TechnologyStore.Shared.Events.Payments;
 
 namespace OrderService.API.Consumers;
 
-/// <summary>
 /// Consumer for PaymentFailedEvent from PaymentService.
 /// Updates order status to Failed when payment fails.
-/// </summary>
 public class PaymentFailedConsumer : IConsumer<IPaymentFailedEvent>
 {
     private readonly IMediator _mediator;

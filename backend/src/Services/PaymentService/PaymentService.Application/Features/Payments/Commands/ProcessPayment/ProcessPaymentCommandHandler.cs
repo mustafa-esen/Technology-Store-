@@ -34,7 +34,6 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
 
     public async Task<PaymentDto> Handle(ProcessPaymentCommand request, CancellationToken cancellationToken)
     {
-        // 🔒 IDEMPOTENCY CHECK - Critical for event-driven systems
         var existingPayment = await _paymentRepository.GetByOrderIdAsync(request.OrderId);
         if (existingPayment != null)
         {
@@ -71,7 +70,7 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
             // Publish PaymentSuccessEvent
             await _publishEndpoint.Publish<IPaymentSuccessEvent>(new
             {
-                OrderId = Guid.Parse(payment.OrderId),
+                OrderId = payment.OrderId,
                 UserId = payment.UserId,
                 Amount = payment.Amount.Amount,
                 PaymentIntentId = payment.TransactionId,
@@ -93,7 +92,7 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
             // Publish PaymentFailedEvent
             await _publishEndpoint.Publish<IPaymentFailedEvent>(new
             {
-                OrderId = Guid.Parse(payment.OrderId),
+                OrderId = payment.OrderId,
                 UserId = payment.UserId,
                 Amount = payment.Amount.Amount,
                 Reason = payment.FailureReason,

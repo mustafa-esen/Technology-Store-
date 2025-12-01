@@ -15,7 +15,6 @@ public class PaymentDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Payment configuration
         modelBuilder.Entity<Payment>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -33,7 +32,6 @@ public class PaymentDbContext : DbContext
 
             entity.HasIndex(e => e.UserId);
 
-            // Money value object as owned entity
             entity.OwnsOne(e => e.Amount, money =>
             {
                 money.Property(m => m.Amount)

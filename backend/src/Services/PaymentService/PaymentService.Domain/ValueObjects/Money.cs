@@ -5,7 +5,7 @@ public class Money
     public decimal Amount { get; private set; }
     public string Currency { get; private set; }
 
-    private Money() { } // For EF Core
+    private Money() { } 
 
     public Money(decimal amount, string currency = "TRY")
     {

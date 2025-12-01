@@ -10,7 +10,6 @@ public class PaymentDbContextFactory : IDesignTimeDbContextFactory<PaymentDbCont
     {
         var optionsBuilder = new DbContextOptionsBuilder<PaymentDbContext>();
 
-        // For migrations, use a default connection string
         optionsBuilder.UseSqlServer("Server=localhost,1450;Database=PaymentServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;");
 
         return new PaymentDbContext(optionsBuilder.Options);

@@ -6,10 +6,8 @@ using TechnologyStore.Shared.Events.Payments;
 
 namespace OrderService.API.Consumers;
 
-/// <summary>
 /// Consumer for PaymentSuccessEvent from PaymentService.
 /// Updates order status to Processing when payment is successful.
-/// </summary>
 public class PaymentSuccessConsumer : IConsumer<IPaymentSuccessEvent>
 {
     private readonly IMediator _mediator;

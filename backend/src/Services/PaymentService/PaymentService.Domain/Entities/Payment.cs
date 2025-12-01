@@ -15,10 +15,9 @@ public class Payment
     public DateTime CreatedDate { get; private set; }
     public DateTime? ProcessedDate { get; private set; }
 
-    // For idempotency - track processed orders
     private static readonly HashSet<string> ProcessedOrderIds = new();
 
-    private Payment() { } // For EF Core
+    private Payment() { } 
 
     public Payment(string orderId, string userId, Money amount)
     {
