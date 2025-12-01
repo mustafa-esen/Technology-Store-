@@ -7,17 +7,31 @@
 - **ApiGateway**: Tüm istekleri yönlendiren gateway ✅ **Tamamlandı**
 - **IdentityService**: Kullanıcı kimlik doğrulama ve yetkilendirme ✅ **Tamamlandı**
 - **ProductService**: Ürün ve kategori yönetimi ✅ **Tamamlandı**
-- **BasketService**: Sepet yönetimi ve Redis cache ✅ **Tamamlandı**
+- **BasketService**: Sepet yönetimi, Redis cache ve ödeme öncesi stok kontrolü ✅ **Tamamlandı**
 - **OrderService**: Sipariş yönetimi ✅ **Tamamlandı**
 - **PaymentService**: Ödeme işlemleri ✅ **Tamamlandı**
-- **NotificationService**: E-posta ve SMS bildirimleri
 - **Shared**: Ortak kütüphaneler, event interface'leri ve RabbitMQ sabitleri ✅ **Tamamlandı**
 
 ## Geliştirme Sırası
 
 ### ✅ Faz 1 - Tamamlandı
 
-- [x] **ProductService** - CQRS, Clean Architecture, 47 Unit Test (Port: 5000)
+- [x] **ProductService** - CQRS, Clean Architecture, Stok Yönetimi (Port: 5000)
+  - [x] CQRS with MediatR pattern
+  - [x] Clean Architecture (Domain, Application, Infrastructure, API)
+  - [x] Product & Category CRUD operations
+  - [x] 47 Unit Tests (100% pass)
+  - [x] **Stok Yönetimi:** 🆕
+    - Product.DecreaseStock() / IncreaseStock() - Domain layer business logic
+    - DecreaseProductStockCommand/Handler - CQRS command pattern
+    - CheckStockQuery/Handler - Toplu stok doğrulama
+    - StockController - REST API endpoint (POST /api/stock/check)
+  - [x] **Event-Driven Stok Güncelleme:** 🆕
+    - OrderCreatedConsumer - Sipariş oluşturulduğunda stok düşürme
+    - IOrderCreatedEvent consume eder (order-created-queue)
+    - Her sipariş kalemi için otomatik stok azaltma
+    - Başarısız stok güncellemeleri loglama
+  - [x] Docker containerization with multi-stage builds
 
 ### ✅ Faz 2 - Kimlik Doğrulama - Tamamlandı
 
@@ -52,7 +66,7 @@
 
 ### ✅ Faz 4 - E-Ticaret Core - Tamamlandı
 
-- [x] **BasketService** - Redis Cache, Sepet Yönetimi (Port: 5002)
+- [x] **BasketService** - Redis Cache, Sepet Yönetimi ve Stok Kontrolü (Port: 5002)
 
   - [x] CQRS with MediatR pattern
   - [x] Clean Architecture (Domain, Application, Infrastructure, API)
@@ -72,6 +86,12 @@
     - IBasketCheckoutEvent publishing (anonymous type pattern)
     - Event içeriği: UserId, UserName, TotalPrice, ShippingAddress, Items
     - CheckoutBasket endpoint sepeti onaylar ve event yayınlar
+  - [x] **Ödeme Öncesi Stok Kontrolü:** 🆕
+    - ProductServiceClient - HTTP client ile ProductService entegrasyonu
+    - CheckoutBasket sırasında gerçek zamanlı stok doğrulama
+    - Yetersiz stok durumunda sipariş oluşturulmadan hata döner (400 BadRequest)
+    - Detaylı stok hata mesajları: "iPhone (need 5, have 2)"
+    - Mikroservisler arası senkron HTTP iletişimi
   - [x] Comprehensive logging system:
     - LoggingBehavior (MediatR pipeline)
     - Repository level logging
@@ -212,25 +232,39 @@
 
 ## 🔄 Event-Driven Architecture Flow (Tam Akış)
 
-### 1️⃣ Sepet → Sipariş → Ödeme → Sipariş Güncelleme (Tamamlandı ✅)
+### 1️⃣ Sepet → Stok Kontrolü → Sipariş → Ödeme → Stok Güncelleme (Tamamlandı ✅)
 
 **Başarılı Akış:**
 
 1. **Kullanıcı sepeti onaylar** → BasketService `POST /api/baskets/{id}/checkout`
-2. **BasketService** sepeti Redis'ten çeker, `IBasketCheckoutEvent` yayınlar → `basket-checkout-queue`
-3. **OrderService.BasketCheckoutConsumer** event'i consume eder
-4. **OrderService** sipariş oluşturur (Status: **Pending**), `IOrderCreatedEvent` yayınlar → `order-created-queue`
-5. **PaymentService.OrderCreatedConsumer** event'i consume eder
-6. **PaymentService** idempotency kontrolü yapar (aynı sipariş daha önce işlendiyse atlar)
-7. **FakePaymentGateway** ödemeyi işler (%90 başarı, 1 saniye gecikme)
-8. **Ödeme Başarılı:** `IPaymentSuccessEvent` yayınlar → `payment-success-queue`
-9. **OrderService.PaymentSuccessConsumer** event'i consume eder
-10. **OrderService** sipariş durumunu **PaymentReceived** olarak günceller
-11. ✅ **Sipariş tamamlandı - Ödeme alındı!**
+2. **BasketService** stok kontrolü yapar → ProductService `POST /api/stock/check` (HTTP)
+3. **ProductService** tüm ürünlerin stok durumunu kontrol eder
+4. **Stok Yetersiz İse:** ❌ 400 BadRequest döner, sipariş oluşturulmaz
+5. **Stok Yeterli İse:** ✅ BasketService sepeti Redis'ten çeker, `IBasketCheckoutEvent` yayınlar → `basket-checkout-queue`
+6. **OrderService.BasketCheckoutConsumer** event'i consume eder
+7. **OrderService** sipariş oluşturur (Status: **Pending**), `IOrderCreatedEvent` yayınlar → `order-created-queue`
+8. **PaymentService.OrderCreatedConsumer** event'i consume eder
+9. **PaymentService** idempotency kontrolü yapar (aynı sipariş daha önce işlendiyse atlar)
+10. **FakePaymentGateway** ödemeyi işler (%90 başarı, 1 saniye gecikme)
+11. **Ödeme Başarılı:** `IPaymentSuccessEvent` yayınlar → `payment-success-queue`
+12. **OrderService.PaymentSuccessConsumer** event'i consume eder
+13. **OrderService** sipariş durumunu **PaymentReceived** olarak günceller
+14. **ProductService.OrderCreatedConsumer** event'i consume eder (paralel)
+15. **ProductService** her ürün için stok düşürür (DecreaseProductStockCommand)
+16. ✅ **Sipariş tamamlandı - Ödeme alındı - Stok güncellendi!**
 
-**Başarısız Akış:**
+**Başarısız Akış (Yetersiz Stok):**
 
-1-7. Yukarıdaki adımlar aynı 8. **Ödeme Başarısız:** `IPaymentFailedEvent` yayınlar → `payment-failed-queue` (Reason: "Yetersiz bakiye" vb.) 9. **OrderService.PaymentFailedConsumer** event'i consume eder 10. **OrderService** sipariş durumunu **Failed** olarak günceller 11. ❌ **Sipariş başarısız - Ödeme alınamadı**
+1. Kullanıcı sepeti onaylar
+2. BasketService stok kontrolü yapar
+3. **ProductService:** ❌ Stok yetersiz (örn: "iPhone need 5, have 2")
+4. **BasketService:** 400 BadRequest döner, detaylı hata mesajı
+5. Sipariş oluşturulmaz, ödeme alınmaz
+6. ❌ **Checkout iptal - Kullanıcı bilgilendirildi**
+
+**Başarısız Akış (Ödeme Hatası):**
+
+1-10. Yukarıdaki adımlar aynı 11. **Ödeme Başarısız:** `IPaymentFailedEvent` yayınlar → `payment-failed-queue` (Reason: "Yetersiz bakiye" vb.) 12. **OrderService.PaymentFailedConsumer** event'i consume eder 13. **OrderService** sipariş durumunu **Failed** olarak günceller 14. **ProductService** stok düşürme yapmaz (OrderCreatedEvent dinlemedi çünkü ödeme başarısız) 15. ❌ **Sipariş başarısız - Ödeme alınamadı**
 
 ### 2️⃣ Sipariş Durum Döngüsü
 
@@ -254,15 +288,29 @@ Cancelled (İptal edildi)
 ### 3️⃣ Event Kuyrukları
 
 - **basket-checkout-queue** → BasketService → OrderService
-- **order-created-queue** → OrderService → PaymentService
+- **order-created-queue** → OrderService → PaymentService + ProductService (paralel)
 - **payment-success-queue** → PaymentService → OrderService
 - **payment-failed-queue** → PaymentService → OrderService
 
-### 4️⃣ Retry Politikası
+### 4️⃣ Mikroservis İletişim Stratejileri
+
+**Senkron HTTP İletişimi (Request-Response):**
+
+- BasketService → ProductService (Stok kontrolü)
+- Kullanım: Gerçek zamanlı doğrulama, hızlı feedback gerekli durumlar
+- Avantaj: Anlık sonuç, basit hata yönetimi
+- Dezavantaj: Servisler arası coupling, latency
+
+**Asenkron Event-Driven İletişim (Publish-Subscribe):**
+
+- OrderService → ProductService (Stok güncelleme)
+- Kullanım: Fire-and-forget, eventual consistency kabul edilebilir durumlar
+- Avantaj: Loose coupling, scalability, resilience
+- Dezavantaj: Eventual consistency, retry mekanizması gerekli
+
+### 5️⃣ Retry Politikası
 
 Tüm consumerlar 3 deneme × 5 saniye retry policy ile korunur.
-
-- [ ] **NotificationService** - Event-Driven, Email/SMS
 
 ## Servis Port Yapısı
 
