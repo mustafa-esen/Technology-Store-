@@ -3,22 +3,26 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy ProductService projects
-COPY ["ProductService/ProductService.API/ProductService.API.csproj", "ProductService/ProductService.API/"]
-COPY ["ProductService/ProductService.Application/ProductService.Application.csproj", "ProductService/ProductService.Application/"]
-COPY ["ProductService/ProductService.Domain/ProductService.Domain.csproj", "ProductService/ProductService.Domain/"]
-COPY ["ProductService/ProductService.Infrastructure/ProductService.Infrastructure.csproj", "ProductService/ProductService.Infrastructure/"]
+COPY ["Services/ProductService/ProductService.API/ProductService.API.csproj", "Services/ProductService/ProductService.API/"]
+COPY ["Services/ProductService/ProductService.Application/ProductService.Application.csproj", "Services/ProductService/ProductService.Application/"]
+COPY ["Services/ProductService/ProductService.Domain/ProductService.Domain.csproj", "Services/ProductService/ProductService.Domain/"]
+COPY ["Services/ProductService/ProductService.Infrastructure/ProductService.Infrastructure.csproj", "Services/ProductService/ProductService.Infrastructure/"]
+
+# Copy Shared library
+COPY ["Shared/TechnologyStore.Shared/TechnologyStore.Shared.csproj", "Shared/TechnologyStore.Shared/"]
 
 # Restore dependencies
-RUN dotnet restore "ProductService/ProductService.API/ProductService.API.csproj"
+RUN dotnet restore "Services/ProductService/ProductService.API/ProductService.API.csproj"
 
 # Copy everything else
-COPY ["ProductService/ProductService.API/", "ProductService/ProductService.API/"]
-COPY ["ProductService/ProductService.Application/", "ProductService/ProductService.Application/"]
-COPY ["ProductService/ProductService.Domain/", "ProductService/ProductService.Domain/"]
-COPY ["ProductService/ProductService.Infrastructure/", "ProductService/ProductService.Infrastructure/"]
+COPY ["Services/ProductService/ProductService.API/", "Services/ProductService/ProductService.API/"]
+COPY ["Services/ProductService/ProductService.Application/", "Services/ProductService/ProductService.Application/"]
+COPY ["Services/ProductService/ProductService.Domain/", "Services/ProductService/ProductService.Domain/"]
+COPY ["Services/ProductService/ProductService.Infrastructure/", "Services/ProductService/ProductService.Infrastructure/"]
+COPY ["Shared/TechnologyStore.Shared/", "Shared/TechnologyStore.Shared/"]
 
 # Build
-WORKDIR "/src/ProductService/ProductService.API"
+WORKDIR "/src/Services/ProductService/ProductService.API"
 RUN dotnet build "ProductService.API.csproj" -c Release -o /app/build
 
 # Publish

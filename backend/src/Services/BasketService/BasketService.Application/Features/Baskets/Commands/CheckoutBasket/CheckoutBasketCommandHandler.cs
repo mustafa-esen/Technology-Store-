@@ -1,3 +1,4 @@
+using BasketService.Application.DTOs;
 using BasketService.Application.Interfaces;
 using MassTransit;
 using MediatR;
@@ -9,15 +10,18 @@ namespace BasketService.Application.Features.Baskets.Commands.CheckoutBasket;
 public class CheckoutBasketCommandHandler : IRequestHandler<CheckoutBasketCommand, bool>
 {
     private readonly IBasketRepository _basketRepository;
+    private readonly IProductServiceClient _productServiceClient;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<CheckoutBasketCommandHandler> _logger;
 
     public CheckoutBasketCommandHandler(
         IBasketRepository basketRepository,
+        IProductServiceClient productServiceClient,
         IPublishEndpoint publishEndpoint,
         ILogger<CheckoutBasketCommandHandler> logger)
     {
         _basketRepository = basketRepository;
+        _productServiceClient = productServiceClient;
         _publishEndpoint = publishEndpoint;
         _logger = logger;
     }
@@ -40,6 +44,37 @@ public class CheckoutBasketCommandHandler : IRequestHandler<CheckoutBasketComman
             return false;
         }
 
+        _logger.LogInformation("📦 Checking stock availability before checkout...");
+
+        var stockCheckRequest = new StockCheckRequest
+        {
+            Items = basket.Items.Select(item => new StockCheckItemDto
+            {
+                ProductId = item.ProductId,
+                RequiredQuantity = item.Quantity
+            }).ToList()
+        };
+
+        var stockCheckResult = await _productServiceClient.CheckStockAsync(stockCheckRequest, cancellationToken);
+
+        if (!stockCheckResult.IsAvailable)
+        {
+            _logger.LogWarning("❌ Stock check failed. {IssueCount} items have insufficient stock",
+                stockCheckResult.Issues.Count);
+
+            foreach (var issue in stockCheckResult.Issues)
+            {
+                _logger.LogWarning("⚠️ Product: {ProductName}, Required: {Required}, Available: {Available}",
+                    issue.ProductName, issue.RequiredQuantity, issue.AvailableStock);
+            }
+
+            throw new InvalidOperationException(
+                $"Insufficient stock: {string.Join(", ", stockCheckResult.Issues.Select(i => $"{i.ProductName} (need {i.RequiredQuantity}, have {i.AvailableStock})"))}"
+            );
+        }
+
+        _logger.LogInformation("✅ Stock check passed. Proceeding with checkout...");
+
         // Sepet event'ini yayınla
         await _publishEndpoint.Publish<IBasketCheckoutEvent>(new
         {
@@ -47,7 +82,7 @@ public class CheckoutBasketCommandHandler : IRequestHandler<CheckoutBasketComman
             UserName = request.UserName,
             TotalPrice = basket.TotalPrice,
             ShippingAddress = request.ShippingAddress,
-            Items = basket.Items.Select(item => new BasketItemDto
+            Items = basket.Items.Select(item => new TechnologyStore.Shared.Events.Baskets.BasketItemDto
             {
                 ProductId = item.ProductId,
                 ProductName = item.ProductName,

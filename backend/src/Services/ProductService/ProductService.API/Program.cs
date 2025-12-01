@@ -1,5 +1,7 @@
 using FluentValidation;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using ProductService.API.Consumers;
 using ProductService.API.Helpers;
 using ProductService.API.Middleware;
 using ProductService.Application.Behaviors;
@@ -10,6 +12,9 @@ using ProductService.Infrastructure.Repositories;
 using Serilog;
 using System.Diagnostics;
 using System.Reflection;
+using TechnologyStore.Shared;
+using TechnologyStore.Shared.Constants;
+using TechnologyStore.Shared.Events.Orders;
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
@@ -77,6 +82,31 @@ try
     builder.Services.AddScoped<IProductRepository, ProductRepository>();
     builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
     LogHelper.LogPackage("Repositories", "Registered");
+
+    LogHelper.LogProcess("Configuring MassTransit with RabbitMQ...");
+    builder.Services.AddMassTransit(x =>
+    {
+        // OrderCreatedConsumer'ı ekle
+        x.AddConsumer<OrderCreatedConsumer>();
+
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            var rabbitMqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+            var rabbitMqUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+            var rabbitMqPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
+            cfg.Host(rabbitMqHost, "/", h =>
+            {
+                h.Username(rabbitMqUser);
+                h.Password(rabbitMqPass);
+            });
+
+            // MassTransit otomatik endpoint oluşturacak (IOrderCreatedEvent için)
+            cfg.ConfigureEndpoints(context);
+        });
+    });
+    LogHelper.LogPackage("MassTransit + RabbitMQ", $"Configured (Host: {builder.Configuration["RabbitMQ:Host"] ?? "localhost"})");
+    LogHelper.LogPackage("OrderCreatedConsumer", "Registered (Consumes: IOrderCreatedEvent)");
 
     builder.Services.AddCors(options =>
     {

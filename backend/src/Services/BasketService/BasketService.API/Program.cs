@@ -3,6 +3,7 @@ using BasketService.API.Middleware;
 using BasketService.Application.Interfaces;
 using BasketService.Application.Mappings;
 using BasketService.Infrastructure.Repositories;
+using BasketService.Infrastructure.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using MassTransit;
@@ -85,6 +86,11 @@ try
     LogHelper.LogProcess("Registering Repositories...");
     builder.Services.AddScoped<IBasketRepository, BasketRepository>();
     LogHelper.LogPackage("BasketRepository", "Registered");
+
+    // HttpClient for ProductService
+    LogHelper.LogProcess("Configuring ProductService HttpClient...");
+    builder.Services.AddHttpClient<IProductServiceClient, ProductServiceClient>();
+    LogHelper.LogPackage("ProductServiceClient", "Registered");
 
     // MassTransit & RabbitMQ
     LogHelper.LogProcess("Configuring MassTransit & RabbitMQ...");

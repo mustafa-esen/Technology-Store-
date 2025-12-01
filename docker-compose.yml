@@ -47,16 +47,21 @@ services:
 
   product-service:
     build:
-      context: ./backend/src/Services
-      dockerfile: ProductService/Dockerfile
+      context: ./backend/src
+      dockerfile: Services/ProductService/Dockerfile
     container_name: technology-store-product-service
     ports:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ProductServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
     depends_on:
       - sqlserver
+      - rabbitmq
     networks:
       - technology-store-network
 
@@ -70,6 +75,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Redis=redis:6379
+      - ProductService__Url=http://product-service:8080
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
       - RabbitMQ__Username=admin
@@ -77,6 +83,7 @@ services:
     depends_on:
       - redis
       - rabbitmq
+      - product-service
     networks:
       - technology-store-network
 
