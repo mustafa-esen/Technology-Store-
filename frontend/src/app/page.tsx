@@ -8,85 +8,48 @@ import {
   Smartphone,
   Headphones,
   Watch,
-  Monitor,
-  Camera,
-  Gamepad2,
-  Speaker,
-  TrendingUp,
   Sparkles,
   ShieldCheck,
   Clock3,
 } from "lucide-react";
-import { ProductService } from "@/services/api";
-import { useLang } from "@/hooks/useLang";
+import { ProductService, CategoryService, BasketService } from "@/services/api";
+import { getUserId } from "@/lib/auth";
+import { extractErrorMessage } from "@/lib/errors";
+import { Product, Category } from "@/types";
 
-const translations = {
-  en: {
-    badge: "New season • Fresh tech picks",
-    heroTitle1: "Craft your setup with",
-    heroTitle2: "precision hardware",
-    heroDesc:
-      "Laptops, audio, wearables, and gaming gear picked for builders, creators, and players. Modern design, secure checkout, fast delivery.",
-    heroCtaPrimary: "Browse products",
-    heroCtaSecondary: "Build your setup",
-    featureTitle: "Featured Gear",
-    featureDesc: "Curated picks, fast shipping",
-    categoriesTitle: "Shop by Category",
-    categoriesDesc: "Sharp filters and selected collections",
-    viewAll: "View all",
-    badgeItems: [
-      { icon: ShieldCheck, title: "Secure checkout", desc: "3D Secure, PCI compliant" },
-      { icon: Clock3, title: "Fast delivery", desc: "Express & tracked shipping" },
-      { icon: Sparkles, title: "Fresh drops", desc: "Weekly curated bundles" },
-    ],
-    categoriesList: [
-      { name: "Laptops", icon: Laptop, color: "bg-blue-500", count: "128+" },
-      { name: "Phones", icon: Smartphone, color: "bg-purple-500", count: "95+" },
-      { name: "Audio", icon: Headphones, color: "bg-pink-500", count: "67+" },
-      { name: "Wearables", icon: Watch, color: "bg-green-500", count: "45+" },
-      { name: "Monitors", icon: Monitor, color: "bg-orange-500", count: "82+" },
-      { name: "Cameras", icon: Camera, color: "bg-red-500", count: "53+" },
-      { name: "Gaming", icon: Gamepad2, color: "bg-indigo-500", count: "71+" },
-      { name: "Speakers", icon: Speaker, color: "bg-teal-500", count: "39+" },
-    ],
-  },
-  tr: {
-    badge: "Yeni sezon • Özenle seçilmiş teknoloji",
-    heroTitle1: "Kurulumunu hazırla",
-    heroTitle2: "premium donanımla",
-    heroDesc:
-      "Laptop, ses ürünleri, giyilebilir cihazlar ve oyun ekipmanları. Modern tasarım, güvenli ödeme, hızlı teslimat.",
-    heroCtaPrimary: "Ürünleri keşfet",
-    heroCtaSecondary: "Kurulum oluştur",
-    featureTitle: "Öne Çıkanlar",
-    featureDesc: "Kürasyonlu seçimler, hızlı teslimat",
-    categoriesTitle: "Kategoriye göre alışveriş",
-    categoriesDesc: "Keskin filtreler ve seçili koleksiyonlar",
-    viewAll: "Tümünü gör",
-    badgeItems: [
-      { icon: ShieldCheck, title: "Güvenli ödeme", desc: "3D Secure, PCI uyumlu" },
-      { icon: Clock3, title: "Hızlı teslimat", desc: "Express & takipli kargo" },
-      { icon: Sparkles, title: "Yeni koleksiyonlar", desc: "Her hafta taze koleksiyon ve paketler" },
-    ],
-    categoriesList: [
-      { name: "Laptoplar", icon: Laptop, color: "bg-blue-500", count: "128+" },
-      { name: "Telefonlar", icon: Smartphone, color: "bg-purple-500", count: "95+" },
-      { name: "Ses", icon: Headphones, color: "bg-pink-500", count: "67+" },
-      { name: "Giyilebilir", icon: Watch, color: "bg-green-500", count: "45+" },
-      { name: "Monitörler", icon: Monitor, color: "bg-orange-500", count: "82+" },
-      { name: "Kameralar", icon: Camera, color: "bg-red-500", count: "53+" },
-      { name: "Gaming", icon: Gamepad2, color: "bg-indigo-500", count: "71+" },
-      { name: "Hoparlör", icon: Speaker, color: "bg-teal-500", count: "39+" },
-    ],
-  },
+const copy = {
+  badge: "Yeni sezon · Özenle seçilmiş teknoloji",
+  heroTitle1: "Kurulumunu hazırla",
+  heroTitle2: "premium donanımla",
+  heroDesc:
+    "Laptop, ses ürünleri, giyilebilir cihazlar ve oyun ekipmanları. Modern tasarım, güvenli ödeme, hızlı teslimat.",
+  heroCtaPrimary: "Ürünleri keşfet",
+  heroCtaSecondary: "Kurulum oluştur",
+  featureTitle: "Öne Çıkanlar",
+  featureDesc: "Seçilmiş ürünler, hızlı teslimat",
+  categoriesTitle: "Kategoriye göre alışveriş",
+  categoriesDesc: "Keskin filtreler ve seçili koleksiyonlar",
+  viewAll: "Tümünü gör",
+  badgeItems: [
+    { icon: ShieldCheck, title: "Güvenli ödeme", desc: "3D Secure, PCI uyumlu" },
+    { icon: Clock3, title: "Hızlı teslimat", desc: "Express & takipli kargo" },
+    { icon: Sparkles, title: "Yeni koleksiyonlar", desc: "Her hafta taze koleksiyonlar" },
+  ],
 };
 
 export default function Home() {
-  const { lang } = useLang("en");
-  const t = translations[lang];
-  const [featured, setFeatured] = useState<any[]>([]);
+  const t = copy;
+  const [featured, setFeatured] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const [actionInfo, setActionInfo] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  // Merkezi auth fonksiyonundan userId al
+  const userId = getUserId() || "";
 
   useEffect(() => {
     const load = async () => {
@@ -94,15 +57,41 @@ export default function Home() {
         setError(null);
         const data = await ProductService.getAll();
         setFeatured(data.slice(0, 4));
-      } catch (err) {
+        const cats = await CategoryService.getAll();
+        setCategories(Array.isArray(cats) ? cats.slice(0, 8) : []);
+      } catch (err: unknown) {
         console.error(err);
-        setError("Failed to load featured products");
+        setError(extractErrorMessage(err, "Öne çıkan ürünler yüklenemedi"));
+        setCategoriesError("Kategoriler yüklenemedi");
       } finally {
         setLoading(false);
       }
     };
     load();
   }, []);
+
+  const handleAddToCart = async (product: Product) => {
+    setActionInfo(null);
+    setActionError(null);
+    if (!userId) {
+      setActionInfo("Sepete eklemek için giriş yap");
+      return;
+    }
+    setAddingId(product.id);
+    try {
+      await BasketService.addItem(userId, {
+        productId: product.id,
+        productName: product.name,
+        price: Number(product.price ?? 0),
+        quantity: 1,
+      });
+      setActionInfo("Ürün sepete eklendi");
+    } catch (err: unknown) {
+      setActionError(extractErrorMessage(err, "Sepete eklenemedi"));
+    } finally {
+      setAddingId(null);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -113,9 +102,19 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <div className="inline-flex items-center px-4 py-2 bg-white/5 border border-white/10 backdrop-blur rounded-full">
-                <TrendingUp className="h-4 w-4 text-cyan-300 mr-2" />
+                <Sparkles className="h-4 w-4 text-cyan-300 mr-2" />
                 <span className="text-sm text-slate-100">{t.badge}</span>
               </div>
+              {actionInfo && (
+                <div className="rounded-md bg-emerald-500/10 border border-emerald-500/40 text-emerald-200 px-4 py-2 text-sm">
+                  {actionInfo}
+                </div>
+              )}
+              {actionError && (
+                <div className="rounded-md bg-red-500/10 border border-red-500/40 text-red-200 px-4 py-2 text-sm">
+                  {actionError}
+                </div>
+              )}
               <div className="space-y-4">
                 <h1 className="text-5xl md:text-6xl font-black leading-tight">
                   {t.heroTitle1}
@@ -134,7 +133,7 @@ export default function Home() {
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
-                  href="/products?category=computers"
+                  href="/products?category=Laptops"
                   className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl border border-white/20 hover:border-cyan-300/60 hover:text-cyan-200 transition-colors"
                 >
                   {t.heroCtaSecondary}
@@ -169,8 +168,8 @@ export default function Home() {
                 <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4 flex items-center gap-3">
                   <Sparkles className="h-5 w-5 text-amber-300" />
                   <div>
-                    <p className="font-semibold text-white">Fresh drops</p>
-                    <p className="text-sm text-slate-200/70">Weekly curated collections and bundles.</p>
+                    <p className="font-semibold text-white">Yeni koleksiyonlar</p>
+                    <p className="text-sm text-slate-200/70">Her hafta taze paketler ve fırsatlar.</p>
                   </div>
                 </div>
               </div>
@@ -187,18 +186,38 @@ export default function Home() {
             <p className="text-lg text-slate-200/80">{t.categoriesDesc}</p>
           </div>
 
+          {categoriesError && (
+            <p className="text-center text-sm text-red-400 mb-4">{categoriesError}</p>
+          )}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {t.categoriesList.map((category, idx) => (
-              <Link key={idx} href={`/products?category=${category.name.toLowerCase()}`} className="group">
-                <div className="bg-slate-800 rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-cyan-300/50">
-                  <div className={`${category.color} w-16 h-16 rounded-xl mx-auto mb-4 flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-300`}>
-                    <category.icon className="h-8 w-8 text-white" />
+            {(categories.length ? categories : []).map((category, idx) => {
+              const colors = [
+                "bg-blue-500",
+                "bg-purple-500",
+                "bg-pink-500",
+                "bg-green-500",
+                "bg-orange-500",
+                "bg-red-500",
+                "bg-indigo-500",
+                "bg-teal-500",
+              ];
+              const color = colors[idx % colors.length];
+              const name = category.name || "Kategori";
+              const desc = category.description || "";
+              return (
+                <Link key={category.id ?? idx} href={`/products?category=${encodeURIComponent(name)}`} className="group">
+                  <div className="bg-slate-800 rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-cyan-300/50">
+                    <div
+                      className={`${color} w-16 h-16 rounded-xl mx-auto mb-4 flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-300`}
+                    >
+                      <Laptop className="h-8 w-8 text-white" />
+                    </div>
+                    <h3 className="font-bold text-white text-sm mb-1">{name}</h3>
+                    <p className="text-xs text-slate-300 line-clamp-2">{desc || t.categoriesDesc}</p>
                   </div>
-                  <h3 className="font-bold text-white text-sm mb-1">{category.name}</h3>
-                  <p className="text-xs text-slate-300">{category.count} items</p>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -237,7 +256,7 @@ export default function Home() {
                     <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-10 flex items-center justify-center h-64 relative overflow-hidden">
                       <div className="absolute inset-0 bg-black/10"></div>
                       <span className="text-5xl font-black text-white relative z-10">
-                        {product.brand || "Tech"}
+                        {product.brand || "Marka"}
                       </span>
                     </div>
                   </div>
@@ -248,15 +267,19 @@ export default function Home() {
                     </h3>
 
                     <div className="flex items-baseline gap-2 mb-4">
-                      <span className="text-3xl font-black text-cyan-300">${Number(product.price).toFixed(2)}</span>
+                      <span className="text-3xl font-black text-cyan-300">₺{Number(product.price).toFixed(2)}</span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <button className="flex-1 py-3 bg-white text-slate-900 rounded-xl font-semibold hover:bg-slate-100 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                        Add to Cart
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        disabled={addingId === product.id}
+                        className="flex-1 py-3 bg-white text-slate-900 rounded-xl font-semibold hover:bg-slate-100 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50"
+                      >
+                        Sepete Ekle
                       </button>
                       <div className="ml-3 text-xs px-3 py-1 rounded-full bg-white/10 border border-white/10 text-slate-200">
-                        Fast ship
+                        Hızlı kargo
                       </div>
                     </div>
                   </div>
@@ -267,7 +290,7 @@ export default function Home() {
 
           <div className="mt-10 text-center md:hidden">
             <Link href="/products" className="inline-flex items-center text-cyan-300 hover:text-cyan-200 font-bold text-lg">
-              View All Products
+              Tüm Ürünleri Gör
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </div>

@@ -6,14 +6,12 @@ import Link from "next/link";
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, ArrowLeft, Check, ChevronRight, Zap, Award, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { BasketService, ProductService } from "@/services/api";
 import { useLang } from "@/hooks/useLang";
+import { getUserId } from "@/lib/auth";
+import { extractErrorMessage } from "@/lib/errors";
+import { Product } from "@/types";
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  category: string;
-  brand?: string;
+// API'den gelen ürün verisi için genişletilmiş tip
+interface ProductDetail extends Product {
   stock?: number;
   imageUrl?: string;
 }
@@ -61,13 +59,15 @@ export default function ProductDetailPage() {
   const t = copy[lang];
   const params = useParams();
   const productId = params.id as string;
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<ProductDetail | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description");
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string>("");
   const [adding, setAdding] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+
+  // Merkezi auth fonksiyonundan userId al
+  const userId = getUserId() || "";
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -80,20 +80,15 @@ export default function ProductDetailPage() {
         }
         setProduct({
           ...data,
-          stock: (data as any).stock ?? 0,
-          imageUrl: (data as any).imageUrl,
+          stock: (data as ProductDetail).stock ?? 0,
+          imageUrl: (data as ProductDetail).imageUrl,
         });
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(err);
-        setError("Failed to load product");
+        setError(extractErrorMessage(err, "Failed to load product"));
       }
     };
     fetchProduct();
-
-    if (typeof window !== "undefined") {
-      const uid = localStorage.getItem("userId") || "";
-      setUserId(uid);
-    }
   }, [productId]);
 
   const handleAddToCart = async () => {
@@ -112,8 +107,8 @@ export default function ProductDetailPage() {
         quantity,
       });
       setInfo(lang === "tr" ? "Ürün sepete eklendi" : "Added to cart");
-    } catch (err) {
-      setError(lang === "tr" ? "Sepete eklenemedi" : "Could not add to cart");
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, lang === "tr" ? "Sepete eklenemedi" : "Could not add to cart"));
     } finally {
       setAdding(false);
     }

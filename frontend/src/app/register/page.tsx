@@ -5,24 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
 import { AuthService } from "@/services/api";
-import { useLang } from "@/hooks/useLang";
+import { saveAuthData } from "@/lib/auth";
+import { extractErrorMessage } from "@/lib/errors";
 
 const texts = {
-  en: {
-    title: "Create your account",
-    subtitle: "Already have an account?",
-    signIn: "Sign in",
-    firstName: "First name",
-    lastName: "Last name",
-    email: "Email address",
-    password: "Password",
-    confirm: "Confirm password",
-    submit: "Create account",
-    loading: "Creating account...",
-    errorMismatch: "Passwords do not match",
-    errorShort: "Password must be at least 6 characters",
-    errorGeneral: "Registration failed. Please try again.",
-  },
   tr: {
     title: "Hesap oluştur",
     subtitle: "Zaten hesabın var mı?",
@@ -42,8 +28,7 @@ const texts = {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { lang } = useLang("en");
-  const t = texts[lang];
+  const t = texts.tr;
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -78,31 +63,16 @@ export default function RegisterPage() {
         password: formData.password,
       });
 
-      // Eğer API token ve userId döndürüyorsa direkt giriş yap
-      const token = res?.token || res?.accessToken;
-      const userId = res?.userId || res?.id || res?.user?.id;
-      if (token) {
-        localStorage.setItem("token", token);
+      // Eğer API token döndürüyorsa direkt giriş yap
+      const hasToken = res?.token || res?.accessToken;
+      if (hasToken) {
+        saveAuthData(res);
+        router.push("/");
+      } else {
+        router.push("/login");
       }
-      if (userId) {
-        localStorage.setItem("userId", userId);
-      }
-      if (res?.user?.email) {
-        localStorage.setItem("userEmail", res.user.email);
-      }
-
-      router.push(token ? "/" : "/login");
-    } catch (err) {
-      // Backend validation mesajını göster
-      const msg =
-        (err as any)?.response?.data?.errors?.Password?.[0] ||
-        (err as any)?.response?.data?.errors?.Email?.[0] ||
-        (err as any)?.response?.data?.errors?.FirstName?.[0] ||
-        (err as any)?.response?.data?.errors?.LastName?.[0] ||
-        (err as any)?.response?.data?.title ||
-        (err as any)?.message ||
-        t.errorGeneral;
-      setError(msg);
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, t.errorGeneral));
     } finally {
       setLoading(false);
     }

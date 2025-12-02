@@ -5,21 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { AuthService } from "@/services/api";
-import { useLang } from "@/hooks/useLang";
+import { saveAuthData } from "@/lib/auth";
+import { extractErrorMessage } from "@/lib/errors";
 
 const texts = {
-  en: {
-    title: "Sign in to your account",
-    subtitle: "Or create a new account",
-    email: "Email address",
-    password: "Password",
-    remember: "Remember me",
-    forgot: "Forgot your password?",
-    submit: "Sign in",
-    loading: "Signing in...",
-    error: "Invalid email or password",
-    createLink: "create a new account",
-  },
   tr: {
     title: "Hesabına giriş yap",
     subtitle: "Ya da yeni bir hesap oluştur",
@@ -36,8 +25,7 @@ const texts = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { lang } = useLang("en");
-  const t = texts[lang];
+  const t = texts.tr;
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -52,30 +40,10 @@ export default function LoginPage() {
 
     try {
       const res = await AuthService.login(formData);
-      // Backend response can be {accessToken, refreshToken, expiresAt, user:{id,...}}
-      const token = res?.token || res?.accessToken;
-      const userId =
-        res?.userId ||
-        res?.id ||
-        res?.user?.id ||
-        res?.userId?.id ||
-        res?.user?.userId;
-      if (!token) throw new Error("Token not returned");
-      localStorage.setItem("token", token);
-      if (userId) {
-        localStorage.setItem("userId", userId);
-      }
-      if (res?.user?.email) {
-        localStorage.setItem("userEmail", res.user.email);
-      }
+      saveAuthData(res);
       router.push("/");
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.title ||
-        err?.response?.data?.errors?.Password?.[0] ||
-        err?.response?.data?.errors?.Email?.[0] ||
-        t.error;
-      setError(msg);
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, t.error));
     } finally {
       setLoading(false);
     }

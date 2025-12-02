@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Online Technology Store",
-  description: "The best place to buy technology products.",
+  title: "Tech Store",
+  description: "Tech Store: modern teknoloji ürünleri, hızlı teslimat ve güvenli ödeme.",
 };
 
 export default function RootLayout({
@@ -18,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="tr" suppressHydrationWarning>
       <body
         className={cn(
           inter.className,

@@ -3,6 +3,7 @@ using System.Reflection;
 using FluentValidation;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using OrderService.API.Consumers;
 using OrderService.API.Helpers;
 using OrderService.API.Middleware;
 using OrderService.Application.Behaviors;
@@ -10,6 +11,8 @@ using OrderService.Application.Interfaces;
 using OrderService.Infrastructure.Data;
 using OrderService.Infrastructure.Repositories;
 using Serilog;
+using TechnologyStore.Shared.Constants;
+using TechnologyStore.Shared.Events.Baskets;
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
@@ -76,18 +79,57 @@ try
     LogHelper.LogMessageBus("Configuring RabbitMQ...");
     builder.Services.AddMassTransit(x =>
     {
+        // Consumer'ları kaydet
+        x.AddConsumer<BasketCheckoutConsumer>();
+        x.AddConsumer<PaymentSuccessConsumer>();
+        x.AddConsumer<PaymentFailedConsumer>();
+
         x.UsingRabbitMq((context, cfg) =>
         {
-            cfg.Host(builder.Configuration["RabbitMQ:Host"], h =>
+            var rabbitMqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+            var rabbitMqPort = builder.Configuration.GetValue<int>("RabbitMQ:Port");
+            if (rabbitMqPort == 0) rabbitMqPort = 5672;
+            var rabbitMqUsername = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+            var rabbitMqPassword = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
+            cfg.Host(rabbitMqHost, (ushort)rabbitMqPort, RabbitMqConstants.DefaultVirtualHost, h =>
             {
-                h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
-                h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
+                h.Username(rabbitMqUsername);
+                h.Password(rabbitMqPassword);
             });
 
+            // BasketCheckoutConsumer için endpoint yapılandırması
+            cfg.ReceiveEndpoint(RabbitMqConstants.BasketCheckoutQueue, e =>
+            {
+                // Retry policy: Hata durumunda 3 kez dene
+                e.UseMessageRetry(r => r.Interval(RabbitMqConstants.MaxRetryCount, TimeSpan.FromSeconds(RabbitMqConstants.RetryDelaySeconds)));
+
+                // Consumer'ı bu endpoint'e bağla
+                e.ConfigureConsumer<BasketCheckoutConsumer>(context);
+            });
+
+            // PaymentSuccessConsumer için endpoint yapılandırması
+            cfg.ReceiveEndpoint(RabbitMqConstants.PaymentSuccessQueue, e =>
+            {
+                e.UseMessageRetry(r => r.Interval(RabbitMqConstants.MaxRetryCount, TimeSpan.FromSeconds(RabbitMqConstants.RetryDelaySeconds)));
+                e.ConfigureConsumer<PaymentSuccessConsumer>(context);
+            });
+
+            // PaymentFailedConsumer için endpoint yapılandırması
+            cfg.ReceiveEndpoint(RabbitMqConstants.PaymentFailedQueue, e =>
+            {
+                e.UseMessageRetry(r => r.Interval(RabbitMqConstants.MaxRetryCount, TimeSpan.FromSeconds(RabbitMqConstants.RetryDelaySeconds)));
+                e.ConfigureConsumer<PaymentFailedConsumer>(context);
+            });
+
+            // Diğer endpoint'ler için otomatik yapılandırma
             cfg.ConfigureEndpoints(context);
         });
     });
     LogHelper.LogMessageBus($"RabbitMQ configured: {builder.Configuration["RabbitMQ:Host"]}");
+    LogHelper.LogMessageBus($"Consumer registered: BasketCheckoutConsumer -> {RabbitMqConstants.BasketCheckoutQueue}");
+    LogHelper.LogMessageBus($"Consumer registered: PaymentSuccessConsumer -> {RabbitMqConstants.PaymentSuccessQueue}");
+    LogHelper.LogMessageBus($"Consumer registered: PaymentFailedConsumer -> {RabbitMqConstants.PaymentFailedQueue}");
 
     builder.Services.AddCors(options =>
     {

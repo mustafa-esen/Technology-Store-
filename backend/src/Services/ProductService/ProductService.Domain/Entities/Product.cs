@@ -23,4 +23,26 @@ public class Product
     public DateTime? UpdatedAt { get; set; }
 
     public Category Category { get; set; } = null!;
+
+
+    public void DecreaseStock(int quantity)
+    {
+        if (quantity <= 0)
+            throw new ArgumentException("Quantity must be greater than zero.", nameof(quantity));
+
+        if (Stock < quantity)
+            throw new InvalidOperationException($"Insufficient stock for product '{Name}'. Available: {Stock}, Required: {quantity}");
+
+        Stock -= quantity;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void IncreaseStock(int quantity)
+    {
+        if (quantity <= 0)
+            throw new ArgumentException("Quantity must be greater than zero.", nameof(quantity));
+
+        Stock += quantity;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BasketService.Domain\BasketService.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Shared\TechnologyStore.Shared\TechnologyStore.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,13 +1,16 @@
 namespace TechnologyStore.Shared.Events.Orders;
 
-public class OrderCreatedEvent
+/// Sipariş oluşturulduğunda yayınlanan event
+/// Publisher: OrderService
+/// Consumers: PaymentService, NotificationService, ProductService (Stok)
+public interface IOrderCreatedEvent
 {
-    public Guid OrderId { get; set; }
-    public string UserId { get; set; } = string.Empty;
-    public decimal TotalAmount { get; set; }
-    public List<OrderItemDto> Items { get; set; } = new();
-    public ShippingAddressDto ShippingAddress { get; set; } = null!;
-    public DateTime CreatedDate { get; set; }
+    Guid OrderId { get; set; }
+    string UserId { get; set; }
+    decimal TotalAmount { get; set; }
+    List<OrderItemDto> Items { get; set; }
+    ShippingAddressDto ShippingAddress { get; set; }
+    DateTime CreatedDate { get; set; }
 }
 
 public class OrderItemDto

@@ -4,12 +4,11 @@ import Link from "next/link";
 import { ShoppingCart, Menu, X, User, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { useLang } from "@/hooks/useLang";
+import { isAuthenticated, getUserEmail, clearAuthData } from "@/lib/auth";
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [theme, setTheme] = useState<"dark" | "light">("dark");
-    const { lang, setLang } = useLang("en");
     const [isAuthed, setIsAuthed] = useState(false);
     const [userEmail, setUserEmail] = useState<string | null>(null);
 
@@ -30,19 +29,17 @@ export function Navbar() {
         document.body.classList.add(storedTheme === "dark" ? "theme-dark" : "theme-light");
         document.documentElement.classList.toggle("dark", storedTheme === "dark");
 
-        const token = localStorage.getItem("token");
-        const email = localStorage.getItem("userEmail");
-        setIsAuthed(!!token);
-        setUserEmail(email);
+        // Auth durumunu merkezi fonksiyonlardan al
+        setIsAuthed(isAuthenticated());
+        setUserEmail(getUserEmail());
     }, []);
 
     const handleLogout = () => {
-        if (typeof window === "undefined") return;
-        localStorage.removeItem("token");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("userEmail");
+        clearAuthData();
         setIsAuthed(false);
         setUserEmail(null);
+        // Ana sayfaya yönlendir
+        window.location.href = "/";
     };
 
     const navClass =
@@ -61,20 +58,30 @@ export function Navbar() {
                 <div className="flex justify-between h-16">
                     <div className="flex">
                         <Link href="/" className="flex-shrink-0 flex items-center">
-                            <span className="text-2xl font-bold text-cyan-400">TechStore</span>
+                            <span className="text-2xl font-bold text-cyan-400">Tech Store</span>
                         </Link>
                         <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                             <Link href="/" className={linkClass}>
-                                Home
+                                Anasayfa
                             </Link>
                             <Link href="/products" className={linkClass}>
-                                Products
+                                Ürünler
                             </Link>
+                            {isAuthed && (
+                                <>
+                                    <Link href="/orders" className={linkClass}>
+                                        Siparişler
+                                    </Link>
+                                    <Link href="/payments" className={linkClass}>
+                                        Ödemeler
+                                    </Link>
+                                </>
+                            )}
                             {isAuthed ? (
-                                <span className={linkClass}>{userEmail ?? "Account"}</span>
+                                <span className={linkClass}>{userEmail ?? "Hesap"}</span>
                             ) : (
                                 <Link href="/login" className={linkClass}>
-                                    Login
+                                    Giriş Yap
                                 </Link>
                             )}
                         </div>
@@ -90,18 +97,7 @@ export function Navbar() {
                                         : "border-slate-300 text-slate-800 hover:border-cyan-600"
                                 )}
                             >
-                                {theme === "dark" ? "Light" : "Dark"}
-                            </button>
-                            <button
-                                onClick={() => setLang(lang === "en" ? "tr" : "en")}
-                                className={cn(
-                                    "px-3 py-1 rounded-full border text-sm transition-colors",
-                                    theme === "dark"
-                                        ? "border-white/20 text-white hover:border-cyan-300"
-                                        : "border-slate-300 text-slate-800 hover:border-cyan-600"
-                                )}
-                            >
-                                {lang.toUpperCase()}
+                                {theme === "dark" ? "Açık" : "Koyu"}
                             </button>
                         </div>
                         <Link
@@ -120,7 +116,7 @@ export function Navbar() {
                                     "p-2 transition-colors",
                                     theme === "dark" ? "text-slate-200 hover:text-red-300" : "text-slate-800 hover:text-red-700"
                                 )}
-                                title="Logout"
+                                title="Çıkış Yap"
                             >
                                 <LogOut className="h-6 w-6" />
                             </button>
@@ -132,7 +128,7 @@ export function Navbar() {
                                     theme === "dark" ? "text-slate-200 hover:text-cyan-300" : "text-slate-800 hover:text-cyan-700"
                                 )}
                             >
-                                <User className="h-6 w-6" />
+                                Giriş Yap
                             </Link>
                         )}
                     </div>
@@ -146,7 +142,7 @@ export function Navbar() {
                                     : "text-slate-800 hover:text-cyan-700 hover:bg-slate-100 focus:ring-cyan-600"
                             )}
                         >
-                            <span className="sr-only">Open main menu</span>
+                            <span className="sr-only">Menüyü aç</span>
                             {isOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
                         </button>
                     </div>
@@ -171,18 +167,7 @@ export function Navbar() {
                                     : "border-slate-300 text-slate-800 hover:border-cyan-600"
                             )}
                         >
-                            {theme === "dark" ? "Light" : "Dark"}
-                        </button>
-                            <button
-                            onClick={() => setLang(lang === "en" ? "tr" : "en")}
-                            className={cn(
-                                "px-3 py-1 rounded-full border text-sm",
-                                theme === "dark"
-                                    ? "border-white/20 text-white hover:border-cyan-300"
-                                    : "border-slate-300 text-slate-800 hover:border-cyan-600"
-                            )}
-                        >
-                            {lang.toUpperCase()}
+                            {theme === "dark" ? "Açık" : "Koyu"}
                         </button>
                     </div>
                     <Link
@@ -194,7 +179,7 @@ export function Navbar() {
                                 : "bg-slate-100 border-cyan-600 text-slate-900"
                         )}
                     >
-                        Home
+                        Anasayfa
                     </Link>
                     <Link
                         href="/products"
@@ -205,7 +190,7 @@ export function Navbar() {
                                 : "text-slate-800 hover:bg-slate-100 hover:border-cyan-600 hover:text-slate-900"
                         )}
                     >
-                        Products
+                        Ürünler
                     </Link>
                     <Link
                         href="/cart"
@@ -216,8 +201,34 @@ export function Navbar() {
                                 : "text-slate-800 hover:bg-slate-100 hover:border-cyan-600 hover:text-slate-900"
                         )}
                     >
-                        Cart
+                        Sepet
                     </Link>
+                    {isAuthed && (
+                        <>
+                            <Link
+                                href="/orders"
+                                className={cn(
+                                    "border-transparent block pl-3 pr-4 py-2 border-l-4 text-base font-medium",
+                                    theme === "dark"
+                                        ? "text-slate-300 hover:bg-slate-800 hover:border-cyan-300 hover:text-white"
+                                        : "text-slate-800 hover:bg-slate-100 hover:border-cyan-600 hover:text-slate-900"
+                                )}
+                            >
+                                Siparişler
+                            </Link>
+                            <Link
+                                href="/payments"
+                                className={cn(
+                                    "border-transparent block pl-3 pr-4 py-2 border-l-4 text-base font-medium",
+                                    theme === "dark"
+                                        ? "text-slate-300 hover:bg-slate-800 hover:border-cyan-300 hover:text-white"
+                                        : "text-slate-800 hover:bg-slate-100 hover:border-cyan-600 hover:text-slate-900"
+                                )}
+                            >
+                                Ödemeler
+                            </Link>
+                        </>
+                    )}
                     {isAuthed ? (
                         <button
                             onClick={handleLogout}
@@ -228,7 +239,7 @@ export function Navbar() {
                                     : "text-slate-800 hover:bg-slate-100 hover:border-red-500 hover:text-slate-900"
                             )}
                         >
-                            Logout
+                            Çıkış Yap
                         </button>
                     ) : (
                         <Link
@@ -240,7 +251,7 @@ export function Navbar() {
                                     : "text-slate-800 hover:bg-slate-100 hover:border-cyan-600 hover:text-slate-900"
                             )}
                         >
-                            Login
+                            Giriş Yap
                         </Link>
                     )}
                 </div>

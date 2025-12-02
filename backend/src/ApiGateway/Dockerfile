@@ -2,14 +2,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy project file (context is backend/)
-COPY ["src/ApiGateway/ApiGateway/ApiGateway.csproj", "ApiGateway/"]
+# Copy project file
+COPY ["ApiGateway/ApiGateway.csproj", "ApiGateway/"]
 
 # Restore dependencies
 RUN dotnet restore "ApiGateway/ApiGateway.csproj"
 
 # Copy everything else
-COPY ["src/ApiGateway/ApiGateway/", "ApiGateway/"]
+COPY ["ApiGateway/", "ApiGateway/"]
 
 # Build
 WORKDIR "/src/ApiGateway"

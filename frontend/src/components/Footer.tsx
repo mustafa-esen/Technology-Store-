@@ -20,7 +20,7 @@ export function Footer() {
                 </div>
                 <div className="mt-8 md:mt-0 md:order-1">
                     <p className="text-center text-base text-muted-foreground">
-                        &copy; {new Date().getFullYear()} Technology Store. All rights reserved.
+                        &copy; {new Date().getFullYear()} Tech Store. Tüm hakları saklıdır.
                     </p>
                 </div>
             </div>
