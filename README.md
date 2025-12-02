@@ -23,14 +23,18 @@
   - [x] 47 Unit Tests (100% pass)
   - [x] **Stok Yönetimi:** 🆕
     - Product.DecreaseStock() / IncreaseStock() - Domain layer business logic
-    - DecreaseProductStockCommand/Handler - CQRS command pattern
+    - DecreaseProductStockCommand/Handler - Stok düşürme
+    - IncreaseProductStockCommand/Handler - Stok arttırma (iptal/iade)
     - CheckStockQuery/Handler - Toplu stok doğrulama
     - StockController - REST API endpoint (POST /api/stock/check)
   - [x] **Event-Driven Stok Güncelleme:** 🆕
-    - OrderCreatedConsumer - Sipariş oluşturulduğunda stok düşürme
-    - IOrderCreatedEvent consume eder (order-created-queue)
-    - Her sipariş kalemi için otomatik stok azaltma
-    - Başarısız stok güncellemeleri loglama
+    - **OrderCreatedConsumer** - Sipariş oluşturulduğunda stok düşürme
+      - IOrderCreatedEvent consume eder (order-created-queue)
+      - Her sipariş kalemi için otomatik stok azaltma
+    - **OrderCancelledConsumer** - Sipariş iptal edildiğinde stok geri yükleme 🆕
+      - IOrderCancelledEvent consume eder (order-cancelled-queue)
+      - İptal edilen siparişlerin stoklarını geri yükler
+      - Başarısız stok güncellemeleri loglama
   - [x] Docker containerization with multi-stage builds
 
 ### ✅ Faz 2 - Kimlik Doğrulama - Tamamlandı
@@ -132,11 +136,16 @@
       - Event'i MediatR command'a dönüştürür
       - Retry policy: 3 deneme × 5 saniye
     - **Event Publishing:**
-      - IOrderCreatedEvent - Sipariş oluşturulduğunda
+      - IOrderCreatedEvent - Sipariş oluşturulduğunda (Items ile birlikte)
       - IOrderStatusChangedEvent - Durum değiştiğinde
       - IOrderCompletedEvent - Sipariş tamamlandığında
-      - IOrderCancelledEvent - Sipariş iptal edildiğinde
+      - IOrderCancelledEvent - Sipariş iptal edildiğinde (Items ile birlikte) 🆕
     - Anonymous type pattern ile event yayınlama
+  - [x] **Sipariş İptali ve Stok İadesi:** 🆕
+    - CancelOrder endpoint - Sipariş iptal etme
+    - IOrderCancelledEvent yayınlama (sipariş kalemleri ile)
+    - ProductService'e stok iadesi için event gönderimi
+    - Order.Items navigation property ile Items bilgisini event'e dahil etme
   - [x] **CreateOrderCommand Factory:** 🆕
     - FromBasketCheckoutEvent() static factory method
     - Event → Command dönüşümü
@@ -167,13 +176,18 @@
 
   - [x] **Event Interfaces:**
     - **Basket Events:** IBasketCheckoutEvent (sepet onaylama + DTO'lar)
-    - **Order Events:** IOrderCreatedEvent, IOrderStatusChangedEvent, IOrderCompletedEvent, IOrderCancelledEvent
+    - **Order Events:**
+      - IOrderCreatedEvent (sipariş oluşturma + Items)
+      - IOrderStatusChangedEvent (durum değişikliği)
+      - IOrderCompletedEvent (sipariş tamamlama)
+      - IOrderCancelledEvent (sipariş iptali + Items) 🆕
     - **Payment Events:** IPaymentSuccessEvent, IPaymentFailedEvent
   - [x] **RabbitMQ Constants:** Queue names, connection settings, retry config (MaxRetryCount: 3)
   - [x] **Anonymous Type Pattern:** Interface-based contracts, concrete class'lara gerek yok
   - [x] **Servisler Arası İletişim:**
     - BasketService → OrderService (IBasketCheckoutEvent) ✅
     - OrderService → PaymentService (IOrderCreatedEvent) ✅
+    - OrderService → ProductService (IOrderCreatedEvent, IOrderCancelledEvent) ✅ 🆕
     - PaymentService → OrderService (IPaymentSuccess/FailedEvent) ✅
   - [x] .NET Standard 2.1 compatibility
   - [x] Kullanıldığı yerler: BasketService, OrderService, PaymentService
@@ -266,6 +280,17 @@
 
 1-10. Yukarıdaki adımlar aynı 11. **Ödeme Başarısız:** `IPaymentFailedEvent` yayınlar → `payment-failed-queue` (Reason: "Yetersiz bakiye" vb.) 12. **OrderService.PaymentFailedConsumer** event'i consume eder 13. **OrderService** sipariş durumunu **Failed** olarak günceller 14. **ProductService** stok düşürme yapmaz (OrderCreatedEvent dinlemedi çünkü ödeme başarısız) 15. ❌ **Sipariş başarısız - Ödeme alınamadı**
 
+**Sipariş İptali ve Stok İadesi Akışı:** 🆕
+
+1. **Kullanıcı siparişi iptal eder** → OrderService `POST /api/orders/{id}/cancel`
+2. **OrderService** sipariş durumunu kontrol eder (Cancelled olabilir mi?)
+3. **OrderService.GetByIdWithItemsAsync** ile Order + Items bilgisini çeker (Include)
+4. **Order.Cancel()** metodu çağrılır, durum **Cancelled** olur
+5. **IOrderCancelledEvent** yayınlanır → `order-cancelled-queue` (Items bilgisi ile)
+6. **ProductService.OrderCancelledConsumer** event'i consume eder
+7. **ProductService** her ürün için stok geri yükler (IncreaseProductStockCommand)
+8. ✅ **Sipariş iptal edildi - Stoklar geri yüklendi!**
+
 ### 2️⃣ Sipariş Durum Döngüsü
 
 ```
@@ -281,14 +306,20 @@ Delivered (Teslim edildi)
 
    ↓ (Ödeme başarısız)
 Failed (Sipariş başarısız)
-   ↓ (İptal)
-Cancelled (İptal edildi)
+
+   ↓ (Kullanıcı iptali) 🆕
+Cancelled (İptal edildi) → Stok iadesi
 ```
 
 ### 3️⃣ Event Kuyrukları
 
 - **basket-checkout-queue** → BasketService → OrderService
 - **order-created-queue** → OrderService → PaymentService + ProductService (paralel)
+- **order-cancelled-queue** → OrderService → ProductService (stok iadesi) 🆕
+- **payment-success-queue** → PaymentService → OrderService
+- **basket-checkout-queue** → BasketService → OrderService
+- **order-created-queue** → OrderService → PaymentService + ProductService (paralel)
+- **order-cancelled-queue** → OrderService → ProductService (stok iadesi) 🆕
 - **payment-success-queue** → PaymentService → OrderService
 - **payment-failed-queue** → PaymentService → OrderService
 
@@ -303,7 +334,9 @@ Cancelled (İptal edildi)
 
 **Asenkron Event-Driven İletişim (Publish-Subscribe):**
 
-- OrderService → ProductService (Stok güncelleme)
+- OrderService → ProductService (Stok güncelleme ve iadesi) 🆕
+  - IOrderCreatedEvent → Stok düşürme
+  - IOrderCancelledEvent → Stok iadesi
 - Kullanım: Fire-and-forget, eventual consistency kabul edilebilir durumlar
 - Avantaj: Loose coupling, scalability, resilience
 - Dezavantaj: Eventual consistency, retry mekanizması gerekli
