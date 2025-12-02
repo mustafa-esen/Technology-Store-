@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using ProductService.API.Consumers;
 using ProductService.API.Helpers;
 using ProductService.API.Middleware;
+using ProductService.Application;
 using ProductService.Application.Behaviors;
 using ProductService.Application.Interfaces;
 using ProductService.Application.Mappings;
@@ -55,13 +56,13 @@ try
     LogHelper.LogProcess("Registering MediatR...");
     builder.Services.AddMediatR(cfg =>
     {
-        cfg.RegisterServicesFromAssembly(typeof(ProductService.Application.AssemblyReference).Assembly);
+        cfg.RegisterServicesFromAssembly(AssemblyReference.Assembly);
         cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
         cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
     });
     LogHelper.LogPackage("MediatR with Behaviors", "Registered");
 
-    builder.Services.AddValidatorsFromAssembly(typeof(ProductService.Application.AssemblyReference).Assembly);
+    builder.Services.AddValidatorsFromAssembly(AssemblyReference.Assembly);
     LogHelper.LogPackage("FluentValidation", "Registered");
 
     builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -86,8 +87,9 @@ try
     LogHelper.LogProcess("Configuring MassTransit with RabbitMQ...");
     builder.Services.AddMassTransit(x =>
     {
-        // OrderCreatedConsumer'ı ekle
+        // Consumers
         x.AddConsumer<OrderCreatedConsumer>();
+        x.AddConsumer<OrderCancelledConsumer>();
 
         x.UsingRabbitMq((context, cfg) =>
         {
@@ -107,6 +109,7 @@ try
     });
     LogHelper.LogPackage("MassTransit + RabbitMQ", $"Configured (Host: {builder.Configuration["RabbitMQ:Host"] ?? "localhost"})");
     LogHelper.LogPackage("OrderCreatedConsumer", "Registered (Consumes: IOrderCreatedEvent)");
+    LogHelper.LogPackage("OrderCancelledConsumer", "Registered (Consumes: IOrderCancelledEvent)");
 
     builder.Services.AddCors(options =>
     {

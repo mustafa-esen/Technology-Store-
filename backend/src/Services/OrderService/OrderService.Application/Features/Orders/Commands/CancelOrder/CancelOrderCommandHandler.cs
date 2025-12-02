@@ -27,7 +27,7 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, boo
         _logger.LogInformation("Attempting to cancel order. OrderId: {OrderId}, Reason: {Reason}",
             request.OrderId, request.CancellationReason);
 
-        var order = await _orderRepository.GetByIdAsync(request.OrderId);
+        var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId);
         if (order == null)
         {
             _logger.LogWarning("Order not found. OrderId: {OrderId}", request.OrderId);
@@ -41,18 +41,27 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, boo
             return false;
         }
 
+        _logger.LogInformation("📦 Order has {ItemCount} items to restore stock", order.Items.Count);
+
         order.Cancel(request.CancellationReason);
         await _orderRepository.UpdateAsync(order);
 
         _logger.LogInformation("Order cancelled successfully. OrderId: {OrderId}", order.Id);
 
-        // Publish IOrderCancelledEvent
+        // Publish IOrderCancelledEvent with order items for stock restoration
         await _publishEndpoint.Publish<IOrderCancelledEvent>(new
         {
             OrderId = order.Id,
             UserId = order.UserId,
             Reason = request.CancellationReason,
-            CancelledDate = DateTime.UtcNow
+            CancelledDate = DateTime.UtcNow,
+            Items = order.Items.Select(item => new
+            {
+                ProductId = item.ProductId,
+                ProductName = item.ProductName,
+                Quantity = item.Quantity,
+                Price = item.Price
+            }).ToList()
         }, cancellationToken);
 
         _logger.LogInformation("✅ OrderCancelledEvent published. OrderId: {OrderId}", order.Id);

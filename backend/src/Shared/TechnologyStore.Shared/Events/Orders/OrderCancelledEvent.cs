@@ -9,4 +9,5 @@ public interface IOrderCancelledEvent
     string UserId { get; set; }
     string Reason { get; set; }
     DateTime CancelledDate { get; set; }
+    List<OrderItemDto> Items { get; set; }
 }
