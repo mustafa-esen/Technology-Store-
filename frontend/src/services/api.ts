@@ -22,7 +22,7 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 15000, // 15 saniye timeout
+  timeout: 30000, // 30 saniye timeout (önceden 15 saniyeydi)
 });
 
 /**

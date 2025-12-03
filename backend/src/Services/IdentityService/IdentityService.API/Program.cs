@@ -32,7 +32,12 @@ try
     builder.Services.AddSwaggerGen();
 
     builder.Services.AddDbContext<IdentityDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection"),
+            sqlOptions => sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null)));
 
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(AssemblyReference.Assembly));
     builder.Services.AddAutoMapper(AssemblyReference.Assembly);
@@ -83,13 +88,22 @@ try
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Identity Service API V1");
-        c.RoutePrefix = string.Empty; 
+        c.RoutePrefix = string.Empty;
     });
 
     app.UseCors();
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
+
+    // Database Migration
+    Log.Information("💾 Applying database migrations...");
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        await db.Database.MigrateAsync();
+        Log.Information("✅ Database migrations completed successfully!");
+    }
 
     LogHelper.LogSuccess("Application configured successfully!");
     LogHelper.LogApi("Identity Service is listening on: http://localhost:5001");
