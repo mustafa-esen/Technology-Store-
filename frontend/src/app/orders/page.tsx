@@ -14,6 +14,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [cancelInfo, setCancelInfo] = useState<string | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const userId = getUserId() || "";
 
@@ -37,10 +38,12 @@ export default function OrdersPage() {
 
   const handleCancel = async (orderId: string) => {
     setCancelError(null);
+    setCancelInfo(null);
     setCancelingId(orderId);
     try {
       await OrderService.cancelOrder(orderId, "Kullanıcı iptali");
       await loadOrders();
+      setCancelInfo("İade/iptal işlemi tamamlandı.");
     } catch (err: unknown) {
       setCancelError(extractErrorMessage(err, "İade/iptal işlemi başarısız oldu."));
     } finally {
@@ -90,6 +93,7 @@ export default function OrdersPage() {
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
       {cancelError && <p className="text-red-500 mb-4">{cancelError}</p>}
+      {cancelInfo && <p className="text-emerald-500 mb-4">{cancelInfo}</p>}
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -164,11 +168,20 @@ export default function OrdersPage() {
                   </Link>
                   <button
                     onClick={() => handleCancel(order.id)}
-                    disabled={cancelingId === order.id || loading}
+                    disabled={
+                      cancelingId === order.id ||
+                      loading ||
+                      normalizeOrderStatus(order.status) === "Cancelled" ||
+                      normalizeOrderStatus(order.status) === "Failed"
+                    }
                     className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-border hover:bg-accent transition disabled:opacity-50"
                   >
                     <RotateCcw className="h-4 w-4" />
-                    {cancelingId === order.id ? "İşleniyor..." : "İade / İptal et"}
+                    {normalizeOrderStatus(order.status) === "Cancelled"
+                      ? "İade/İptal edildi"
+                      : cancelingId === order.id
+                        ? "İşleniyor..."
+                        : "İade / İptal et"}
                   </button>
                 </div>
               </div>

@@ -42,6 +42,11 @@ export default function LoginPage() {
       const res = await AuthService.login(formData);
       saveAuthData(res);
       router.push("/");
+      router.refresh();
+      // Sert yenileme; giriş bilgisinin tüm sayfalara yansıması için
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
     } catch (err: unknown) {
       setError(extractErrorMessage(err, t.error));
     } finally {

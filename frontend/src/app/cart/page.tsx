@@ -35,6 +35,18 @@ export default function CartPage() {
   const [mounted, setMounted] = useState(false);
   const [stockMap, setStockMap] = useState<Record<string, number | undefined>>({});
 
+  const ensureUserId = (): string | null => {
+    const uid = userId || getUserId() || null;
+    if (uid && !userId) {
+      setUserId(uid);
+    }
+    if (!uid) {
+      setError("Giriş yapmalısın.");
+      return null;
+    }
+    return uid;
+  };
+
   const subtotal = basket?.items.reduce((sum, item) => sum + item.price * item.quantity, 0) ?? 0;
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
@@ -145,8 +157,12 @@ export default function CartPage() {
     }
   };
 
-  const updateQuantity = async (item: { productId: string; productName?: string; quantity: number }, target: number) => {
-    if (!basket || !userId) return;
+  const updateQuantity = async (
+    item: { productId: string; productName?: string; quantity: number },
+    target: number,
+    uid: string
+  ) => {
+    if (!basket) return;
     const requested = Math.max(1, target);
     setLoading(true);
     setError(null);
@@ -164,8 +180,8 @@ export default function CartPage() {
           return;
         }
       }
-      await BasketService.updateItem(userId, item.productId, finalQty);
-      await loadBasket(userId);
+      await BasketService.updateItem(uid, item.productId, finalQty);
+      await loadBasket(uid);
     } catch (err: unknown) {
       setError(extractErrorMessage(err, "Miktar güncellenemedi."));
     } finally {
@@ -174,16 +190,18 @@ export default function CartPage() {
   };
 
   const handleQuantity = async (item: { productId: string; productName?: string; quantity: number }, change: number) => {
-    if (!basket || !userId) return;
+    const uid = ensureUserId();
+    if (!basket || !uid) return;
     const nextQty = item.quantity + change;
-    await updateQuantity(item, nextQty);
+    await updateQuantity(item, nextQty, uid);
   };
 
   const handleQuantityInput = async (item: { productId: string; productName?: string; quantity: number }, value: string) => {
-    if (!basket || !userId) return;
+    const uid = ensureUserId();
+    if (!basket || !uid) return;
     const parsed = parseInt(value, 10);
     const nextQty = Number.isNaN(parsed) ? 1 : parsed;
-    await updateQuantity(item, nextQty);
+    await updateQuantity(item, nextQty, uid);
   };
 
   const handleRemove = async (item: { productId: string }) => {

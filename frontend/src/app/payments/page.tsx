@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CreditCard, Loader2, Receipt, RefreshCcw } from "lucide-react";
-import { PaymentService } from "@/services/api";
+import { PaymentService, OrderService } from "@/services/api";
 import { formatCurrency, getPaymentStatusMeta } from "@/lib/utils";
 import { getUserId } from "@/lib/auth";
 import { extractErrorMessage } from "@/lib/errors";
@@ -14,6 +14,7 @@ export default function PaymentsPage() {
   const params = useSearchParams();
   const filterOrderId = params.get("orderId");
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [ordersMap, setOrdersMap] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +31,17 @@ export default function PaymentsPage() {
         list = list.filter((payment) => payment.orderId === filterOrderId);
       }
       setPayments(list);
+
+      const uniqueOrderIds = Array.from(new Set(list.map((p) => p.orderId).filter(Boolean)));
+      const fetched: Record<string, any> = {};
+      for (const oid of uniqueOrderIds) {
+        try {
+          fetched[oid] = await OrderService.getOrder(oid);
+        } catch {
+          // ignore
+        }
+      }
+      setOrdersMap(fetched);
     } catch (err: unknown) {
       setError(extractErrorMessage(err, "Ödemeler alınamadı."));
     } finally {
@@ -99,6 +111,7 @@ export default function PaymentsPage() {
           {payments.map((payment) => {
             const statusMeta = getPaymentStatusMeta(payment.status);
             const processed = payment.processedDate || payment.createdDate;
+            const order = payment.orderId ? ordersMap[payment.orderId] : null;
             return (
               <div key={payment.id} className="border border-border rounded-xl p-4 bg-card shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
@@ -128,6 +141,19 @@ export default function PaymentsPage() {
                     {payment.transactionId ? `Txn: ${payment.transactionId}` : "İşlem kimliği yok"}
                   </div>
                 </div>
+
+                {order?.items?.length ? (
+                  <div className="mt-3 text-sm text-muted-foreground space-y-1">
+                    <p className="font-semibold text-foreground">Siparişteki ürünler</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {order.items.map((item: any) => (
+                        <li key={item.productId} className="text-foreground">
+                          {item.productName} — {item.quantity} adet, {formatCurrency(item.price)} / adet
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
 
                 {payment.failureReason && (
                   <p className="text-sm text-red-400 mt-2">Hata: {payment.failureReason}</p>
