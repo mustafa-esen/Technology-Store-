@@ -41,18 +41,18 @@ const ORDER_STATUS_MAP: Record<number, string> = {
  */
 export function normalizeOrderStatus(status: string | number | undefined | null): string {
   if (status === undefined || status === null) return "Pending";
-  
+
   // Number ise map'ten çevir
   if (typeof status === "number") {
     return ORDER_STATUS_MAP[status] ?? "Pending";
   }
-  
+
   // String ama sayı formatında ise
   if (/^\d+$/.test(status)) {
     const asNum = Number(status);
     return ORDER_STATUS_MAP[asNum] ?? "Pending";
   }
-  
+
   return status || "Pending";
 }
 

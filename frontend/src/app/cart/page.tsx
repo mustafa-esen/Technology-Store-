@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Trash2, Plus, Minus, ShoppingBag, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
-import { BasketService, OrderService, PaymentService } from "@/services/api";
-import { getOrderStatusMeta, getPaymentStatusMeta } from "@/lib/utils";
+import { BasketService, OrderService, PaymentService, ProductService } from "@/services/api";
+import { getOrderStatusMeta, getPaymentStatusMeta, normalizeOrderStatus } from "@/lib/utils";
 import { getUserId } from "@/lib/auth";
 import { extractErrorMessage } from "@/lib/errors";
 import { Basket, ShippingAddress } from "@/types";
@@ -18,6 +18,7 @@ const defaultAddress: ShippingAddress = {
 };
 
 export default function CartPage() {
+  const [userId, setUserId] = useState("");
   const [basket, setBasket] = useState<Basket | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,29 +33,27 @@ export default function CartPage() {
   const [cardForm, setCardForm] = useState({ name: "", number: "", expiry: "", cvc: "" });
   const [address, setAddress] = useState<ShippingAddress>(defaultAddress);
   const [mounted, setMounted] = useState(false);
-
-  // Merkezi auth fonksiyonundan userId al
-  const userId = useMemo(() => getUserId() || "", []);
+  const [stockMap, setStockMap] = useState<Record<string, number | undefined>>({});
 
   const subtotal = basket?.items.reduce((sum, item) => sum + item.price * item.quantity, 0) ?? 0;
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
 
-  const loadBasket = async () => {
-    if (!userId) {
+  const loadBasket = async (uid: string) => {
+    if (!uid) {
       setBasket(null);
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const res = await BasketService.getBasket(userId);
+      const res = await BasketService.getBasket(uid);
       setBasket(res);
     } catch (err: unknown) {
       // Sepet yoksa 404 gelebilir, bu durumda boş sepet göster
       const axiosErr = err as { response?: { status?: number } };
       if (axiosErr?.response?.status === 404) {
-        setBasket({ userId, items: [] });
+        setBasket({ userId: uid, items: [] });
       } else {
         setError(extractErrorMessage(err, "Sepet alınamadı. Lütfen tekrar deneyin."));
       }
@@ -65,9 +64,10 @@ export default function CartPage() {
 
   useEffect(() => {
     setMounted(true);
-    void loadBasket();
-
     if (typeof window !== "undefined") {
+      const uid = getUserId() || "";
+      setUserId(uid);
+
       const stored = localStorage.getItem("savedCard");
       if (stored) {
         try {
@@ -76,6 +76,12 @@ export default function CartPage() {
           setSavedCard(null);
         }
       }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (userId) {
+      void loadBasket(userId);
     }
   }, [userId]);
 
@@ -86,7 +92,7 @@ export default function CartPage() {
     const interval = setInterval(async () => {
       try {
         const order = await OrderService.getOrder(activeOrderId);
-        const status = String(order?.status ?? "Pending");
+        const status = normalizeOrderStatus(order?.status);
         setOrderStatus(status);
 
         if (["PaymentReceived", "Processing", "Shipped", "Delivered"].includes(status)) {
@@ -126,19 +132,58 @@ export default function CartPage() {
     return () => clearInterval(interval);
   }, [activeOrderId, userId]);
 
-  const handleQuantity = async (item: { productId: string; quantity: number }, change: number) => {
+  const fetchStock = async (productId: string): Promise<number | undefined> => {
+    if (productId in stockMap) return stockMap[productId];
+    try {
+      const product = await ProductService.getById(productId);
+      const stock = product?.stock;
+      setStockMap((prev) => ({ ...prev, [productId]: stock }));
+      return stock;
+    } catch {
+      setStockMap((prev) => ({ ...prev, [productId]: undefined }));
+      return undefined;
+    }
+  };
+
+  const updateQuantity = async (item: { productId: string; productName?: string; quantity: number }, target: number) => {
     if (!basket || !userId) return;
-    const nextQty = Math.max(1, item.quantity + change);
+    const requested = Math.max(1, target);
     setLoading(true);
     setError(null);
     try {
-      await BasketService.updateItem(userId, item.productId, nextQty);
-      await loadBasket();
+      let maxQty = stockMap[item.productId];
+      if (maxQty === undefined) {
+        maxQty = await fetchStock(item.productId);
+      }
+      let finalQty = requested;
+      if (typeof maxQty === "number" && requested > maxQty) {
+        finalQty = maxQty;
+        setError(`Stok yetersiz: ${item.productName || "Ürün"} (stok: ${maxQty})`);
+        if (maxQty < 1) {
+          setLoading(false);
+          return;
+        }
+      }
+      await BasketService.updateItem(userId, item.productId, finalQty);
+      await loadBasket(userId);
     } catch (err: unknown) {
       setError(extractErrorMessage(err, "Miktar güncellenemedi."));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQuantity = async (item: { productId: string; productName?: string; quantity: number }, change: number) => {
+    if (!basket || !userId) return;
+    const nextQty = item.quantity + change;
+    await updateQuantity(item, nextQty);
+  };
+
+  const handleQuantityInput = async (item: { productId: string; productName?: string; quantity: number }, value: string) => {
+    if (!basket || !userId) return;
+    const parsed = parseInt(value, 10);
+    const nextQty = Number.isNaN(parsed) ? 1 : parsed;
+    await updateQuantity(item, nextQty);
   };
 
   const handleRemove = async (item: { productId: string }) => {
@@ -147,7 +192,7 @@ export default function CartPage() {
     setError(null);
     try {
       await BasketService.removeItem(userId, item.productId);
-      await loadBasket();
+      await loadBasket(userId);
     } catch (err: unknown) {
       setError(extractErrorMessage(err, "Ürün silinemedi."));
     } finally {
@@ -161,7 +206,7 @@ export default function CartPage() {
     setError(null);
     try {
       await BasketService.clear(userId);
-      await loadBasket();
+      await loadBasket(userId);
     } catch (err: unknown) {
       setError(extractErrorMessage(err, "Sepet temizlenemedi."));
     } finally {
@@ -179,6 +224,26 @@ export default function CartPage() {
     // Step 2: ensure payment form is filled
     if (!useSavedCard && (!cardForm.name || !cardForm.number || !cardForm.expiry || !cardForm.cvc)) {
       setError("Kart bilgilerini eksiksiz doldurun.");
+      return;
+    }
+
+    // Stok kontrolü (backend şimdilik sınır koymadığı için önden engelle)
+    try {
+      const stocks = await Promise.all(
+        basket.items.map(async (item) => {
+          const product = await ProductService.getById(item.productId);
+          return { ...item, stock: product?.stock };
+        })
+      );
+      const insufficient = stocks.find((i) => typeof i.stock === "number" && i.quantity > (i.stock ?? 0));
+      if (insufficient) {
+        setError(
+          `Stok yetersiz: ${insufficient.productName} (stok: ${insufficient.stock}, istenen: ${insufficient.quantity})`
+        );
+        return;
+      }
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, "Stok kontrolü sırasında hata oluştu."));
       return;
     }
 
@@ -229,6 +294,8 @@ export default function CartPage() {
     }
   };
 
+  if (!mounted) return null;
+
   if (!userId) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-12 text-center">
@@ -260,8 +327,6 @@ export default function CartPage() {
       </div>
     );
   }
-
-  if (!mounted) return null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -322,9 +387,7 @@ export default function CartPage() {
                   <span className="text-xs text-muted-foreground">Image</span>
                 </div>
                 <div className="flex-grow">
-                  <h3 className="text-lg font-semibold text-foreground">
-                    {item.productName ?? "Ürün"}
-                  </h3>
+                  <h3 className="text-lg font-semibold text-foreground">{item.productName ?? "Ürün"}</h3>
                   <p className="text-primary font-bold mt-1">₺{item.price.toFixed(2)}</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -335,7 +398,13 @@ export default function CartPage() {
                   >
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="w-12 text-center font-medium">{item.quantity}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={item.quantity}
+                    onChange={(e) => handleQuantityInput(item, e.target.value)}
+                    className="w-14 text-center font-medium bg-background border border-border rounded-md py-1 text-foreground"
+                  />
                   <button
                     onClick={() => handleQuantity(item, 1)}
                     className="p-1 border border-border rounded hover:bg-accent disabled:opacity-50"

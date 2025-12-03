@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Package, RefreshCcw, ShoppingBag } from "lucide-react";
+import { Loader2, Package, RefreshCcw, ShoppingBag, RotateCcw } from "lucide-react";
 import { OrderService } from "@/services/api";
 import { formatCurrency, getOrderStatusMeta, normalizeOrderStatus } from "@/lib/utils";
 import { getUserId } from "@/lib/auth";
@@ -13,6 +13,8 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const userId = getUserId() || "";
 
   const loadOrders = async () => {
@@ -32,6 +34,19 @@ export default function OrdersPage() {
   useEffect(() => {
     void loadOrders();
   }, [userId]);
+
+  const handleCancel = async (orderId: string) => {
+    setCancelError(null);
+    setCancelingId(orderId);
+    try {
+      await OrderService.cancelOrder(orderId, "Kullanıcı iptali");
+      await loadOrders();
+    } catch (err: unknown) {
+      setCancelError(extractErrorMessage(err, "İade/iptal işlemi başarısız oldu."));
+    } finally {
+      setCancelingId(null);
+    }
+  };
 
   if (!userId) {
     return (
@@ -74,6 +89,7 @@ export default function OrdersPage() {
       </div>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
+      {cancelError && <p className="text-red-500 mb-4">{cancelError}</p>}
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -108,7 +124,7 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 mb-4">
+                <div className="flex flex-wrap items-center gap-3 mb-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusMeta.badge}`}>
                     {statusMeta.label}
                   </span>
@@ -119,6 +135,19 @@ export default function OrdersPage() {
                     </span>
                   )}
                 </div>
+
+                {order.items?.length ? (
+                  <div className="mb-3 text-sm text-muted-foreground space-y-1">
+                    <p className="font-semibold text-foreground">Ürünler</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {order.items.map((item) => (
+                        <li key={item.productId} className="text-foreground">
+                          {item.productName} — {item.quantity} adet, {formatCurrency(item.price)} / adet
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
 
                 <div className="flex flex-wrap gap-3">
                   <Link
@@ -133,6 +162,14 @@ export default function OrdersPage() {
                   >
                     Ödeme detaylarını gör
                   </Link>
+                  <button
+                    onClick={() => handleCancel(order.id)}
+                    disabled={cancelingId === order.id || loading}
+                    className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-border hover:bg-accent transition disabled:opacity-50"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {cancelingId === order.id ? "İşleniyor..." : "İade / İptal et"}
+                  </button>
                 </div>
               </div>
             );

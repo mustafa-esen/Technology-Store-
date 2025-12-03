@@ -252,24 +252,28 @@ export default function Home() {
                   key={product.id ?? idx}
                   className="group bg-slate-900 rounded-2xl border border-white/10 hover:border-cyan-300/40 transition-all duration-300 overflow-hidden transform hover:-translate-y-2 shadow-xl shadow-cyan-900/30"
                 >
-                  <div className="relative">
-                    <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-10 flex items-center justify-center h-64 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-black/10"></div>
-                      <span className="text-5xl font-black text-white relative z-10">
-                        {product.brand || "Marka"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-200 transition-colors">
-                      {product.name}
-                    </h3>
-
-                    <div className="flex items-baseline gap-2 mb-4">
-                      <span className="text-3xl font-black text-cyan-300">₺{Number(product.price).toFixed(2)}</span>
+                  <Link href={`/products/${product.id}`} className="block">
+                    <div className="relative">
+                      <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-10 flex items-center justify-center h-64 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-black/10"></div>
+                        <span className="text-5xl font-black text-white relative z-10">
+                          {product.brand || "Marka"}
+                        </span>
+                      </div>
                     </div>
 
+                    <div className="p-6">
+                      <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-200 transition-colors">
+                        {product.name}
+                      </h3>
+
+                      <div className="flex items-baseline gap-2 mb-4">
+                        <span className="text-3xl font-black text-cyan-300">₺{Number(product.price).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </Link>
+
+                  <div className="px-6 pb-6 pt-0">
                     <div className="flex items-center justify-between">
                       <button
                         onClick={() => handleAddToCart(product)}

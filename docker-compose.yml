@@ -46,8 +46,8 @@ services:
   # Microservices will be added here
   product-service:
     build:
-      context: ./backend
-      dockerfile: ./src/Services/ProductService/Dockerfile
+      context: ./backend/src
+      dockerfile: ./Services/ProductService/Dockerfile
     container_name: technology-store-product-service
     ports:
       - "5000:8080"
@@ -65,8 +65,8 @@ services:
 
   identity-service:
     build:
-      context: ./backend
-      dockerfile: ./src/Services/IdentityService/Dockerfile
+      context: ./backend/src
+      dockerfile: ./Services/IdentityService/Dockerfile
     container_name: technology-store-identity-service
     ports:
       - "5001:8080"
@@ -116,10 +116,29 @@ services:
     networks:
       - technology-store-network
 
+  payment-service:
+    build:
+      context: ./backend/src
+      dockerfile: ./Services/PaymentService/PaymentService.API/Dockerfile
+    container_name: technology-store-payment-service
+    ports:
+      - "5004:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PaymentServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - technology-store-network
+
   api-gateway:
     build:
-      context: ./backend
-      dockerfile: ./src/ApiGateway/Dockerfile
+      context: ./backend/src/ApiGateway
+      dockerfile: ./Dockerfile
     container_name: technology-store-api-gateway
     ports:
       - "5050:8080"
@@ -130,6 +149,7 @@ services:
       - identity-service
       - basket-service
       - order-service
+      - payment-service
     networks:
       - technology-store-network
 
