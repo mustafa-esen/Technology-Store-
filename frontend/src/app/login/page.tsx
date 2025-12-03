@@ -40,7 +40,10 @@ export default function LoginPage() {
 
     try {
       const res = await AuthService.login(formData);
+      console.log("LOGIN RESPONSE:", res);
+      console.log("LOGIN RESPONSE KEYS:", Object.keys(res));
       saveAuthData(res);
+      console.log("SAVED userId:", localStorage.getItem("userId"));
       router.push("/");
     } catch (err: unknown) {
       setError(extractErrorMessage(err, t.error));
