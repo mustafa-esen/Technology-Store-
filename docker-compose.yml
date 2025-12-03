@@ -24,10 +24,12 @@ services:
     container_name: technology-store-redisinsight
     ports:
       - "5540:5540"
-    depends_on:
-      - redis
+    volumes:
+      - redisinsight-data:/data
     networks:
       - technology-store-network
+    depends_on:
+      - redis
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -43,37 +45,20 @@ services:
     networks:
       - technology-store-network
 
-  # Microservices will be added here
   product-service:
     build:
       context: ./backend/src
-      dockerfile: ./Services/ProductService/Dockerfile
+      dockerfile: Services/ProductService/Dockerfile
     container_name: technology-store-product-service
     ports:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ProductDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ProductServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
       - RabbitMQ__Host=rabbitmq
-      - Redis__Configuration=redis:6379
-    depends_on:
-      - sqlserver
-      - rabbitmq
-      - redis
-    networks:
-      - technology-store-network
-
-  identity-service:
-    build:
-      context: ./backend/src
-      dockerfile: ./Services/IdentityService/Dockerfile
-    container_name: technology-store-identity-service
-    ports:
-      - "5001:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=IdentityDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
-      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
     depends_on:
       - sqlserver
       - rabbitmq
@@ -83,24 +68,29 @@ services:
   basket-service:
     build:
       context: ./backend/src
-      dockerfile: ./Services/BasketService/Dockerfile
+      dockerfile: Services/BasketService/Dockerfile
     container_name: technology-store-basket-service
     ports:
       - "5002:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Redis=redis:6379
+      - ProductService__Url=http://product-service:8080
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
     depends_on:
-      - sqlserver
-      - rabbitmq
       - redis
+      - rabbitmq
+      - product-service
     networks:
       - technology-store-network
 
   order-service:
     build:
       context: ./backend/src
-      dockerfile: ./Services/OrderService/Dockerfile
+      dockerfile: Services/OrderService/Dockerfile
     container_name: technology-store-order-service
     ports:
       - "5003:8080"
@@ -108,6 +98,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
       - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
     depends_on:
@@ -119,14 +110,16 @@ services:
   payment-service:
     build:
       context: ./backend/src
-      dockerfile: ./Services/PaymentService/PaymentService.API/Dockerfile
+      dockerfile: Services/PaymentService/PaymentService.API/Dockerfile
     container_name: technology-store-payment-service
     ports:
       - "5004:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PaymentServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
       - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
     depends_on:
@@ -135,10 +128,25 @@ services:
     networks:
       - technology-store-network
 
+  identity-service:
+    build:
+      context: ./backend/src
+      dockerfile: Services/IdentityService/Dockerfile
+    container_name: technology-store-identity-service
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=IdentityServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+    depends_on:
+      - sqlserver
+    networks:
+      - technology-store-network
+
   api-gateway:
     build:
       context: ./backend/src/ApiGateway
-      dockerfile: ./Dockerfile
+      dockerfile: Dockerfile
     container_name: technology-store-api-gateway
     ports:
       - "5050:8080"
@@ -146,15 +154,16 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - product-service
-      - identity-service
       - basket-service
       - order-service
       - payment-service
+      - identity-service
     networks:
       - technology-store-network
 
 volumes:
   sqlserver-data:
+  redisinsight-data:
 
 networks:
   technology-store-network:
