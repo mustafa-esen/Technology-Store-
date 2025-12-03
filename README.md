@@ -7,6 +7,7 @@
 - **ApiGateway**: Tüm istekleri yönlendiren gateway ✅ **Tamamlandı**
 - **IdentityService**: Kullanıcı kimlik doğrulama ve yetkilendirme ✅ **Tamamlandı**
 - **ProductService**: Ürün ve kategori yönetimi ✅ **Tamamlandı**
+
 - **BasketService**: Sepet yönetimi, Redis cache ve ödeme öncesi stok kontrolü ✅ **Tamamlandı**
 - **OrderService**: Sipariş yönetimi ✅ **Tamamlandı**
 - **PaymentService**: Ödeme işlemleri ✅ **Tamamlandı**
@@ -355,7 +356,7 @@ Tüm consumerlar 3 deneme × 5 saniye retry policy ile korunur.
 | BasketService   | 5002     | 6379 (Redis)        | 5540    | ✅    |
 | OrderService    | 5003     | 1450 (SQL Server)   | -       | ✅    |
 | PaymentService  | 5004     | 1450 (SQL Server)   | -       | ✅    |
-| RabbitMQ        | 5672     | -                   | 15672   | ✅    |
+
 
 ## Swagger UI
 
@@ -510,11 +511,6 @@ GO
 # OrderService siparişlerini görüntüle
 USE OrderServiceDb;
 SELECT * FROM Orders ORDER BY CreatedDate DESC;
-GO
-
-# PaymentService ödemelerini görüntüle
-USE PaymentServiceDb;
-SELECT * FROM Payments ORDER BY CreatedDate DESC;
 GO
 ```
 

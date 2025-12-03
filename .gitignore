@@ -17,6 +17,7 @@ obj/
 *.svclog
 *.scc
 *.nupkg
+*.sql
 
 # Node
 node_modules/
