@@ -135,7 +135,11 @@ export const BasketService = {
   },
 
   updateItem: async (userId: string, productId: string, quantity: number): Promise<Basket> => {
-    const res = await api.put(`/baskets/${userId}/items/${productId}`, { quantity });
+    const res = await api.put(`/baskets/${userId}/items/${productId}`, { 
+      userId,
+      productId,
+      quantity 
+    });
     return res.data;
   },
 
