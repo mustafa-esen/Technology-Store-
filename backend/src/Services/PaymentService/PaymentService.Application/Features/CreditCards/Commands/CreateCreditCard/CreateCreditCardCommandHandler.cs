@@ -27,19 +27,33 @@ public class CreateCreditCardCommandHandler : IRequestHandler<CreateCreditCardCo
     {
         _logger.LogInformation("💳 Creating credit card for user: {UserId}", request.UserId);
 
+        // Convert int to string with leading zero for month
+        var expiryMonth = request.ExpiryMonth.ToString("D2");
+        var expiryYear = request.ExpiryYear.ToString("D2");
+
         var creditCard = new CreditCard(
             request.UserId,
             request.CardHolderName,
             request.CardNumber,
-            request.ExpiryMonth,
-            request.ExpiryYear
+            expiryMonth,
+            expiryYear
         );
 
+        // Handle default card logic
         var existingCards = await _creditCardRepository.GetByUserIdAsync(request.UserId);
-        if (existingCards.Count == 0)
+
+        if (request.IsDefault || existingCards.Count == 0)
         {
+            // If user wants this as default or it's their first card, set as default
+            // and remove default from all other cards
+            foreach (var card in existingCards)
+            {
+                card.RemoveDefault();
+                await _creditCardRepository.UpdateAsync(card);
+            }
+
             creditCard.SetAsDefault();
-            _logger.LogInformation("✅ First card, set as default");
+            _logger.LogInformation("✅ Card set as default");
         }
 
         var created = await _creditCardRepository.AddAsync(creditCard);

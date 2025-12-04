@@ -23,15 +23,17 @@ public class CreateCreditCardCommandValidator : AbstractValidator<CreateCreditCa
             .WithMessage("Card number must be between 13 and 19 digits");
 
         RuleFor(x => x.ExpiryMonth)
-            .NotEmpty()
-            .WithMessage("Expiry month is required")
-            .Matches(@"^(0[1-9]|1[0-2])$")
-            .WithMessage("Expiry month must be between 01 and 12");
+            .InclusiveBetween(1, 12)
+            .WithMessage("Expiry month must be between 1 and 12");
 
         RuleFor(x => x.ExpiryYear)
+            .GreaterThanOrEqualTo(DateTime.Now.Year % 100)
+            .WithMessage("Expiry year cannot be in the past");
+
+        RuleFor(x => x.Cvv)
             .NotEmpty()
-            .WithMessage("Expiry year is required")
-            .Matches(@"^\d{2}$")
-            .WithMessage("Expiry year must be 2 digits (YY)");
+            .WithMessage("CVV is required")
+            .Matches(@"^\d{3,4}$")
+            .WithMessage("CVV must be 3 or 4 digits");
     }
 }

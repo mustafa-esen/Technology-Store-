@@ -44,7 +44,9 @@ public class CreditCardsController : ControllerBase
             CardHolderName = dto.CardHolderName,
             CardNumber = dto.CardNumber,
             ExpiryMonth = dto.ExpiryMonth,
-            ExpiryYear = dto.ExpiryYear
+            ExpiryYear = dto.ExpiryYear,
+            Cvv = dto.Cvv,
+            IsDefault = dto.IsDefault
         };
 
         var result = await _mediator.Send(command);

@@ -14,8 +14,10 @@ public record CreditCardDto(
 public record CreateCreditCardDto(
     string CardHolderName,
     string CardNumber,
-    string ExpiryMonth,
-    string ExpiryYear
+    int ExpiryMonth,
+    int ExpiryYear,
+    string Cvv,
+    bool IsDefault
 );
 
 public record UpdateCreditCardDto(
