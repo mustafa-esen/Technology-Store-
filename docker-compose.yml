@@ -10,6 +10,11 @@ services:
       RABBITMQ_DEFAULT_PASS: admin123
     networks:
       - technology-store-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:alpine
@@ -44,6 +49,12 @@ services:
       - sqlserver-data:/var/opt/mssql
     networks:
       - technology-store-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
 
   product-service:
     build:
@@ -60,8 +71,10 @@ services:
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
     depends_on:
-      - sqlserver
-      - rabbitmq
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
     networks:
       - technology-store-network
 
@@ -81,9 +94,12 @@ services:
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
     depends_on:
-      - redis
-      - rabbitmq
-      - product-service
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      product-service:
+        condition: service_started
     networks:
       - technology-store-network
 
@@ -102,8 +118,10 @@ services:
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
     depends_on:
-      - sqlserver
-      - rabbitmq
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
     networks:
       - technology-store-network
 
@@ -123,8 +141,10 @@ services:
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
     depends_on:
-      - sqlserver
-      - rabbitmq
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
     networks:
       - technology-store-network
 
@@ -139,7 +159,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=IdentityServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
     networks:
       - technology-store-network
 
