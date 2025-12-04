@@ -25,7 +25,7 @@ try
 
     // Add services
     builder.Services.AddOcelot()
-        .AddPolly(); // ✅ Polly eklendi - Retry, Circuit Breaker
+        .AddPolly(); 
 
     // Swagger for Ocelot
     builder.Services.AddEndpointsApiExplorer();
@@ -74,7 +74,6 @@ finally
     await Log.CloseAndFlushAsync();
 }
 
-// Swagger JSON transformer for correct routing
 static string AlterUpstreamSwaggerJson(HttpContext context, string swaggerJson)
 {
     return swaggerJson.Replace("localhost:5000", "localhost:5050")

@@ -36,6 +36,7 @@ builder.Services.AddDbContext<PaymentDbContext>(options =>
 
 // ========== REPOSITORY & SERVICES ==========
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
 builder.Services.AddScoped<IPaymentGateway, FakePaymentGateway>();
 
 // ========== MEDIATR & BEHAVIORS ==========

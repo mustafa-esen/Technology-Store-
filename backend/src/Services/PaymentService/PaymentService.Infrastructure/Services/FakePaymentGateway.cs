@@ -3,10 +3,8 @@ using PaymentService.Application.Interfaces;
 
 namespace PaymentService.Infrastructure.Services;
 
-/// <summary>
 /// Fake payment gateway for development/testing purposes.
 /// Simulates payment processing without real bank integration.
-/// </summary>
 public class FakePaymentGateway : IPaymentGateway
 {
     private readonly ILogger<FakePaymentGateway> _logger;
