@@ -17,6 +17,8 @@ const defaultAddress: ShippingAddress = {
   zipCode: "",
 };
 
+const savedCardKey = (uid: string) => `savedCard_${uid}`;
+
 export default function CartPage() {
   const [userId, setUserId] = useState("");
   const [basket, setBasket] = useState<Basket | null>(null);
@@ -34,6 +36,7 @@ export default function CartPage() {
   const [address, setAddress] = useState<ShippingAddress>(defaultAddress);
   const [mounted, setMounted] = useState(false);
   const [stockMap, setStockMap] = useState<Record<string, number | undefined>>({});
+  const [autoCancelled, setAutoCancelled] = useState(false);
 
   const subtotal = basket?.items.reduce((sum, item) => sum + item.price * item.quantity, 0) ?? 0;
   const tax = subtotal * 0.1;
@@ -67,21 +70,48 @@ export default function CartPage() {
     if (typeof window !== "undefined") {
       const uid = getUserId() || "";
       setUserId(uid);
-
-      const stored = localStorage.getItem("savedCard");
-      if (stored) {
-        try {
-          setSavedCard(JSON.parse(stored));
-        } catch {
-          setSavedCard(null);
-        }
-      }
     }
   }, []);
 
   useEffect(() => {
     if (userId) {
       void loadBasket(userId);
+    }
+  }, [userId]);
+
+  // Ödeme başarısız olursa otomatik iptal tetikle (stok iadesi için)
+  useEffect(() => {
+    if (!activeOrderId || autoCancelled) return;
+    const isFailed = orderStatus && ["Failed", "Cancelled"].includes(orderStatus);
+    const paymentFailed = paymentStatus === "Failed";
+    if (isFailed || paymentFailed) {
+      void (async () => {
+        try {
+          await OrderService.cancelOrder(activeOrderId, "Auto-cancel: payment failed");
+          setAutoCancelled(true);
+        } catch {
+          // yok say
+        }
+      })();
+    }
+  }, [activeOrderId, orderStatus, paymentStatus, autoCancelled]);
+
+  // Kişiye özel kayıtlı kartı yükle
+  useEffect(() => {
+    if (!userId || typeof window === "undefined") {
+      setSavedCard(null);
+      setUseSavedCard(false);
+      return;
+    }
+    const stored = localStorage.getItem(savedCardKey(userId));
+    if (stored) {
+      try {
+        setSavedCard(JSON.parse(stored));
+      } catch {
+        setSavedCard(null);
+      }
+    } else {
+      setSavedCard(null);
     }
   }, [userId]);
 
@@ -248,13 +278,13 @@ export default function CartPage() {
     }
 
     // Save masked card for future use (frontend only)
-    if (!useSavedCard && cardForm.number.length >= 4) {
+    if (!useSavedCard && cardForm.number.length >= 4 && userId) {
       const masked = {
         last4: cardForm.number.slice(-4),
         name: cardForm.name,
         expiry: cardForm.expiry,
       };
-      localStorage.setItem("savedCard", JSON.stringify(masked));
+      localStorage.setItem(savedCardKey(userId), JSON.stringify(masked));
       setSavedCard(masked);
     }
 

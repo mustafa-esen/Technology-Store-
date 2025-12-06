@@ -16,6 +16,7 @@ import { ProductService, CategoryService, BasketService } from "@/services/api";
 import { getUserId } from "@/lib/auth";
 import { extractErrorMessage } from "@/lib/errors";
 import { Product, Category } from "@/types";
+import { formatCurrency } from "@/lib/utils";
 
 const copy = {
   badge: "Yeni sezon · Özenle seçilmiş teknoloji",

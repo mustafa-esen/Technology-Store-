@@ -89,10 +89,14 @@ export function getCurrentUser(): Partial<User> | null {
   if (!token || !userId) return null;
 
   const decoded = decodeToken(token) as any;
-  const roles = decoded?.role
-    ? Array.isArray(decoded.role)
-      ? decoded.role
-      : [decoded.role as string]
+  const roleClaim =
+    decoded?.role ||
+    decoded?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
+    decoded?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"];
+  const roles = roleClaim
+    ? Array.isArray(roleClaim)
+      ? roleClaim
+      : [roleClaim as string]
     : undefined;
 
   return {

@@ -74,7 +74,9 @@ export const ProductService = {
       id: (p.id ?? idx).toString(),
       price: Number(p.price ?? 0),
       category: p.category ?? p.categoryName ?? "General",
+      categoryId: p.categoryId ?? p.category?.id ?? p.categoryID,
       brand: p.brand ?? fallbackBrands[idx % fallbackBrands.length],
+      imageUrl: p.imageUrl,
     }));
   },
 
@@ -86,8 +88,24 @@ export const ProductService = {
       id: (p?.id ?? id).toString(),
       price: Number(p?.price ?? 0),
       category: p?.category ?? p?.categoryName ?? "General",
+      categoryId: p?.categoryId ?? p?.category?.id ?? p?.categoryID,
       brand: p?.brand ?? fallbackBrands[0],
+      imageUrl: p?.imageUrl,
     };
+  },
+
+  create: async (payload: Partial<Product>): Promise<Product> => {
+    const res = await api.post("/products", payload);
+    return res.data;
+  },
+
+  update: async (id: string, payload: Partial<Product>): Promise<Product> => {
+    const res = await api.put(`/products/${id}`, payload);
+    return res.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/products/${id}`);
   },
 };
 
@@ -96,6 +114,20 @@ export const CategoryService = {
   getAll: async (): Promise<Category[]> => {
     const res = await api.get("/categories");
     return Array.isArray(res.data) ? res.data : [];
+  },
+
+  create: async (payload: Partial<Category>): Promise<Category> => {
+    const res = await api.post("/categories", payload);
+    return res.data;
+  },
+
+  update: async (id: string, payload: Partial<Category>): Promise<Category> => {
+    const res = await api.put(`/categories/${id}`, payload);
+    return res.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/categories/${id}`);
   },
 };
 
