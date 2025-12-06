@@ -1,9 +1,12 @@
 using FluentValidation;
 using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using PaymentService.API.Consumers;
 using PaymentService.API.Helpers;
 using PaymentService.API.Middleware;
+using System.Text;
 using PaymentService.Application.Behaviors;
 using PaymentService.Application.Interfaces;
 using PaymentService.Infrastructure.Data;
@@ -36,6 +39,7 @@ builder.Services.AddDbContext<PaymentDbContext>(options =>
 
 // ========== REPOSITORY & SERVICES ==========
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
 builder.Services.AddScoped<IPaymentGateway, FakePaymentGateway>();
 
 // ========== MEDIATR & BEHAVIORS ==========
@@ -52,6 +56,32 @@ builder.Services.AddAutoMapper(typeof(PaymentService.Application.Mappings.Mappin
 // ========== FLUENT VALIDATION ==========
 builder.Services.AddValidatorsFromAssembly(
     typeof(PaymentService.Application.Features.Payments.Commands.ProcessPayment.ProcessPaymentCommand).Assembly);
+
+// ========== JWT AUTHENTICATION ==========
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"];
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // ========== MASSTRANSIT & RABBITMQ ==========
 builder.Services.AddMassTransit(x =>
@@ -90,6 +120,32 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Payment Service API", Version = "v1" });
+
+    // JWT Authorization için Swagger yapılandırması
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\""
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
 });
 
 // ========== CORS ==========
@@ -116,6 +172,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

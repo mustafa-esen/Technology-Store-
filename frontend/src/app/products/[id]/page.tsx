@@ -8,6 +8,7 @@ import { BasketService, ProductService } from "@/services/api";
 import { useLang } from "@/hooks/useLang";
 import { getUserId } from "@/lib/auth";
 import { extractErrorMessage } from "@/lib/errors";
+import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/types";
 
 // API'den gelen ürün verisi için genişletilmiş tip
@@ -27,7 +28,7 @@ export default function ProductDetailPage() {
       noReviews: "No reviews yet",
       writeReview: "Write a Review",
       freeShipping: "Free Shipping",
-      freeShippingSub: "On orders over $50",
+      freeShippingSub: "On orders over ₺50",
       warranty: "2 Year Warranty",
       warrantySub: "Full coverage",
       authentic: "Authentic",
@@ -45,7 +46,7 @@ export default function ProductDetailPage() {
       noReviews: "Henüz yorum yok",
       writeReview: "Yorum Yaz",
       freeShipping: "Ücretsiz Kargo",
-      freeShippingSub: "50$ üzeri siparişlerde",
+      freeShippingSub: "50₺ üzeri siparişlerde",
       warranty: "2 Yıl Garanti",
       warrantySub: "Tam kapsam",
       authentic: "Orijinal",
@@ -225,7 +226,7 @@ export default function ProductDetailPage() {
             {/* Price */}
             <div className="border-y border-white/10 py-6">
               <div className="flex items-baseline gap-4 mb-2">
-                <span className="text-5xl font-black text-cyan-300">${product.price}</span>
+                <span className="text-5xl font-black text-cyan-300">{formatCurrency(product.price)}</span>
               </div>
               <p className="text-sm text-slate-200 mt-2">
                 {product.stock && product.stock > 0 ? (

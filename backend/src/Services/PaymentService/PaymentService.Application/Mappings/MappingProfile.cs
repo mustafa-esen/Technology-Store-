@@ -11,5 +11,8 @@ public class MappingProfile : Profile
         CreateMap<Payment, PaymentDto>()
             .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount.Amount))
             .ForMember(dest => dest.Currency, opt => opt.MapFrom(src => src.Amount.Currency));
+
+        // CreditCard mappings
+        CreateMap<CreditCard, CreditCardDto>();
     }
 }

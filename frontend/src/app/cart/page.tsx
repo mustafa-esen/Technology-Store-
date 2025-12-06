@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Trash2, Plus, Minus, ShoppingBag, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
-import { BasketService, OrderService, PaymentService, ProductService } from "@/services/api";
-import { getOrderStatusMeta, getPaymentStatusMeta, normalizeOrderStatus } from "@/lib/utils";
+import { BasketService, OrderService, PaymentService, ProductService, CreditCardService } from "@/services/api";
+import { getOrderStatusMeta, getPaymentStatusMeta, normalizeOrderStatus, formatCurrency } from "@/lib/utils";
 import { getUserId } from "@/lib/auth";
 import { extractErrorMessage } from "@/lib/errors";
-import { Basket, ShippingAddress } from "@/types";
+import { Basket, ShippingAddress, CreditCard } from "@/types";
 
 const defaultAddress: ShippingAddress = {
   street: "",
@@ -16,8 +16,6 @@ const defaultAddress: ShippingAddress = {
   country: "",
   zipCode: "",
 };
-
-const savedCardKey = (uid: string) => `savedCard_${uid}`;
 
 export default function CartPage() {
   const [userId, setUserId] = useState("");
@@ -31,8 +29,9 @@ export default function CartPage() {
   const [polling, setPolling] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [useSavedCard, setUseSavedCard] = useState(false);
-  const [savedCard, setSavedCard] = useState<{ last4: string; name: string; expiry: string } | null>(null);
+  const [savedCard, setSavedCard] = useState<CreditCard | null>(null);
   const [cardForm, setCardForm] = useState({ name: "", number: "", expiry: "", cvc: "" });
+  const [savingCard, setSavingCard] = useState(false);
   const [address, setAddress] = useState<ShippingAddress>(defaultAddress);
   const [mounted, setMounted] = useState(false);
   const [stockMap, setStockMap] = useState<Record<string, number | undefined>>({});
@@ -96,23 +95,23 @@ export default function CartPage() {
     }
   }, [activeOrderId, orderStatus, paymentStatus, autoCancelled]);
 
-  // Kişiye özel kayıtlı kartı yükle
+  // API'den kayıtlı varsayılan kartı yükle
   useEffect(() => {
-    if (!userId || typeof window === "undefined") {
+    if (!userId) {
       setSavedCard(null);
       setUseSavedCard(false);
       return;
     }
-    const stored = localStorage.getItem(savedCardKey(userId));
-    if (stored) {
+    const loadDefaultCard = async () => {
       try {
-        setSavedCard(JSON.parse(stored));
+        const card = await CreditCardService.getDefault();
+        setSavedCard(card);
+        if (card) setUseSavedCard(true);
       } catch {
         setSavedCard(null);
       }
-    } else {
-      setSavedCard(null);
-    }
+    };
+    void loadDefaultCard();
   }, [userId]);
 
   useEffect(() => {
@@ -277,15 +276,27 @@ export default function CartPage() {
       return;
     }
 
-    // Save masked card for future use (frontend only)
+    // Yeni kart girildiyse API'ye kaydet
     if (!useSavedCard && cardForm.number.length >= 4 && userId) {
-      const masked = {
-        last4: cardForm.number.slice(-4),
-        name: cardForm.name,
-        expiry: cardForm.expiry,
-      };
-      localStorage.setItem(savedCardKey(userId), JSON.stringify(masked));
-      setSavedCard(masked);
+      setSavingCard(true);
+      try {
+        const [mm, yy] = cardForm.expiry.split("/").map((s) => parseInt(s.trim(), 10));
+        const expiryYear = yy < 100 ? 2000 + yy : yy;
+        const newCard = await CreditCardService.create({
+          cardHolderName: cardForm.name,
+          cardNumber: cardForm.number.replace(/\s/g, ""),
+          expiryMonth: mm,
+          expiryYear,
+          cvv: cardForm.cvc,
+          isDefault: true,
+        });
+        setSavedCard(newCard);
+      } catch (cardErr: unknown) {
+        setError(extractErrorMessage(cardErr, "Kart kaydedilemedi."));
+        setSavingCard(false);
+        return;
+      }
+      setSavingCard(false);
     }
 
     setCheckoutLoading(true);
@@ -413,12 +424,16 @@ export default function CartPage() {
                 key={item.productId}
                 className="bg-card border border-border rounded-lg p-4 flex items-center gap-4"
               >
-                <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs text-muted-foreground">Image</span>
+                <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Görsel yok</span>
+                  )}
                 </div>
                 <div className="flex-grow">
                   <h3 className="text-lg font-semibold text-foreground">{item.productName ?? "Ürün"}</h3>
-                  <p className="text-primary font-bold mt-1">₺{item.price.toFixed(2)}</p>
+                  <p className="text-primary font-bold mt-1">{formatCurrency(item.price)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -460,11 +475,11 @@ export default function CartPage() {
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Ara Toplam</span>
-                  <span className="text-foreground font-medium">₺{subtotal.toFixed(2)}</span>
+                  <span className="text-foreground font-medium">{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Vergi (10%)</span>
-                  <span className="text-foreground font-medium">₺{tax.toFixed(2)}</span>
+                  <span className="text-foreground font-medium">{formatCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Kargo</span>
@@ -473,7 +488,7 @@ export default function CartPage() {
                 <div className="border-t border-border pt-3">
                   <div className="flex justify-between">
                     <span className="text-lg font-bold text-foreground">Toplam</span>
-                    <span className="text-lg font-bold text-primary">₺{total.toFixed(2)}</span>
+                    <span className="text-lg font-bold text-primary">{formatCurrency(total)}</span>
                   </div>
                 </div>
               </div>
@@ -514,7 +529,7 @@ export default function CartPage() {
               </div>
               <div className="space-y-2 pt-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground">Ödeme (Fake Gateway)</h3>
+                  <h3 className="font-semibold text-foreground">Ödeme</h3>
                   {savedCard && (
                     <label className="flex items-center gap-2 text-sm text-foreground">
                       <input
@@ -522,7 +537,7 @@ export default function CartPage() {
                         checked={useSavedCard}
                         onChange={(e) => setUseSavedCard(e.target.checked)}
                       />
-                      <span>{`Kayıtlı kartı kullan (${savedCard.name} •••• ${savedCard.last4})`}</span>
+                      <span>{`Kayıtlı kartı kullan (${savedCard.cardHolderName} •••• ${savedCard.cardNumber.slice(-4)})`}</span>
                     </label>
                   )}
                 </div>

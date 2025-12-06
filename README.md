@@ -201,6 +201,24 @@
   - [x] Payment management endpoints:
     - GetPayment - Ödeme detayları
     - GetPaymentsByUserId - Kullanıcının ödemeleri
+  - [x] **Kredi Kartı Yönetimi (CreditCard CRUD)** 🆕
+    - **Domain Entity:** CreditCard (Id, UserId, CardHolderName, CardNumber, ExpiryMonth, ExpiryYear, CardType, IsDefault)
+    - **Security Features:**
+      - Otomatik kart maskeleme (\***\* \*\*** \*\*\*\* 1234)
+      - Kart tipi algılama (Visa, MasterCard, Amex)
+      - Son kullanma tarihi doğrulama
+    - **CQRS Commands:**
+      - CreateCreditCard - Yeni kart ekleme (ilk kart otomatik default)
+      - UpdateCreditCard - Kart sahibi ve son kullanma tarihi güncelleme
+      - DeleteCreditCard - Kart silme
+      - SetDefaultCard - Varsayılan kart belirleme
+    - **CQRS Queries:**
+      - GetUserCreditCards - Kullanıcının tüm kartları
+      - GetCreditCardById - Tek kart detayları
+      - GetDefaultCard - Varsayılan kart
+    - **CreditCardsController** - REST API endpoints (7 endpoints)
+    - **Authorization:** JWT token ile kullanıcı doğrulama
+    - **Not:** Sadece gösteriş amaçlı, gerçek ödeme entegrasyonu yok (FakePaymentGateway'den bağımsız)
   - [x] Domain-Driven Design:
     - Payment aggregate root (OrderId, UserId, Amount, Status, TransactionId)
     - Money value object (Amount + Currency)
@@ -356,7 +374,6 @@ Tüm consumerlar 3 deneme × 5 saniye retry policy ile korunur.
 | BasketService   | 5002     | 6379 (Redis)        | 5540    | ✅    |
 | OrderService    | 5003     | 1450 (SQL Server)   | -       | ✅    |
 | PaymentService  | 5004     | 1450 (SQL Server)   | -       | ✅    |
-
 
 ## Swagger UI
 

@@ -148,6 +148,17 @@ export interface Payment {
   createdDate?: string;
 }
 
+export interface CreditCard {
+  id: string;
+  cardHolderName: string;
+  cardNumber: string;
+  expiryMonth: string | number;
+  expiryYear: string | number;
+  cardType?: string;
+  isDefault?: boolean;
+  createdDate?: string;
+}
+
 // ==================== API RESPONSE TYPES ====================
 export interface ApiError {
   title?: string;
