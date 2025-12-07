@@ -24,6 +24,40 @@ services:
     networks:
       - technology-store-network
 
+  mongodb:
+    image: mongo:7.0
+    container_name: technology-store-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - technology-store-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: technology-store-mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongodb:27017/
+      ME_CONFIG_BASICAUTH: false
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - technology-store-network
+
   redisinsight:
     image: redis/redisinsight:latest
     container_name: technology-store-redisinsight
@@ -164,6 +198,26 @@ services:
     networks:
       - technology-store-network
 
+  review-service:
+    build:
+      context: ./backend/src
+      dockerfile: Services/ReviewService/ReviewService.API/Dockerfile
+    container_name: technology-store-review-service
+    ports:
+      - "5005:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MongoDb__ConnectionString=mongodb://admin:admin123@mongodb:27017
+      - MongoDb__DatabaseName=TechnologyStoreReviews
+      - JwtSettings__SecretKey=YourSuperSecretKeyForJWTTokenGeneration123456!
+      - JwtSettings__Issuer=TechnologyStore.IdentityService
+      - JwtSettings__Audience=TechnologyStore.Clients
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - technology-store-network
+
   api-gateway:
     build:
       context: ./backend/src/ApiGateway
@@ -179,11 +233,13 @@ services:
       - order-service
       - payment-service
       - identity-service
+      - review-service
     networks:
       - technology-store-network
 
 volumes:
   sqlserver-data:
+  mongodb-data:
   redisinsight-data:
 
 networks:
