@@ -22,12 +22,13 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000, // 30 saniye timeout (önceden 15 saniyeydi)
+  timeout: 30000, // 30 saniye timeout
 });
 
-/**
- * Request interceptor - Auth token ekler
+/*
+  Request interceptor - Auth token ekler
  */
+
 const attachAuth = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
   if (typeof window !== "undefined") {
     const token = getToken();
@@ -176,7 +177,6 @@ export const OrderService = {
 };
 
 // ==================== PAYMENT SERVICE ====================
-// Tüm istekler artık Gateway üzerinden geçiyor
 export const PaymentService = {
   getPaymentById: async (id: string): Promise<Payment> => {
     const res = await api.get(`/payments/${id}`);

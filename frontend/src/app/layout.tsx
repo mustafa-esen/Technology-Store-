@@ -9,7 +9,8 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Tech Store",
-  description: "Tech Store: modern teknoloji ürünleri, hızlı teslimat ve güvenli ödeme.",
+  description:
+    "Tech Store: modern teknoloji ürünleri, hızlı teslimat ve güvenli ödeme.",
 };
 
 export default function RootLayout({
