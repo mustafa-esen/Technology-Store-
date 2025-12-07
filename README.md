@@ -7,7 +7,7 @@
 - **ApiGateway**: Tüm istekleri yönlendiren gateway ✅ **Tamamlandı**
 - **IdentityService**: Kullanıcı kimlik doğrulama ve yetkilendirme ✅ **Tamamlandı**
 - **ProductService**: Ürün ve kategori yönetimi ✅ **Tamamlandı**
-
+- **ReviewService**: Ürün yorumları ve değerlendirme sistemi ✅ **Tamamlandı**
 - **BasketService**: Sepet yönetimi, Redis cache ve ödeme öncesi stok kontrolü ✅ **Tamamlandı**
 - **OrderService**: Sipariş yönetimi ✅ **Tamamlandı**
 - **PaymentService**: Ödeme işlemleri ✅ **Tamamlandı**
@@ -262,6 +262,49 @@
     - Domain value object tests (25 tests) - Money operators, validation, formatting
     - Command handler tests (10 tests) - ProcessPayment with gateway integration, event publishing
     - Query handler tests (20 tests) - GetPaymentById, GetPaymentsByUserId with mapper mocking
+
+- [x] **ReviewService** - Ürün Yorumları ve Değerlendirme Sistemi (Port: 5005)
+
+  - [x] CQRS with MediatR pattern
+  - [x] Clean Architecture (Domain, Application, Infrastructure, API)
+  - [x] MongoDB NoSQL database integration
+  - [x] Review management endpoints:
+    - CreateReview - Yeni yorum ekleme (JWT required)
+    - UpdateReview - Yorumu güncelleme (JWT required + ownership check)
+    - DeleteReview - Yorumu silme (JWT required + ownership check)
+    - GetReviewsByProduct - Ürüne ait yorumları listeleme (anonymous)
+    - GetReviewsByUser - Kullanıcının tüm yorumları (JWT required)
+  - [x] Domain Model:
+    - ProductReview entity (MongoDB BSON serialization)
+    - Fields: ProductId, UserId, Comment, Rating (1-5), ImageUrls, CreatedAt, UpdatedAt
+  - [x] **Rating Validation:**
+    - FluentValidation ile 1-5 arası zorunlu kontrol
+    - ValidationBehavior (MediatR pipeline) ile otomatik validasyon
+    - 0, negatif ve 5'ten büyük değerler reddedilir (400 Bad Request)
+  - [x] **Authorization & Ownership:**
+    - JWT Bearer token authentication
+    - UserId extraction from ClaimTypes.NameIdentifier
+    - Update/Delete işlemlerinde kullanıcı sahiplik kontrolü
+  - [x] FluentValidation:
+    - CreateReviewCommandValidator - Rating, Comment, ProductId validation
+    - UpdateReviewCommandValidator - Rating, Comment validation
+    - InclusiveBetween(1, 5) rule for rating
+  - [x] AutoMapper 12.0.1 entity-DTO mapping
+  - [x] Advanced logging system:
+    - LogHelper with emojis (🚀 ⭐ 💬)
+    - LoggingBehavior & ValidationBehavior
+    - RequestLoggingMiddleware (performance tracking)
+    - Startup/Shutdown banners
+  - [x] Global exception handling middleware
+  - [x] Serilog structured logging
+  - [x] Swagger UI with JWT authentication support
+  - [x] Gateway integration (review routes configured)
+  - [x] Docker containerization
+  - [x] Multi-stage Docker builds (.NET 9.0)
+  - [x] MongoDB Management:
+    - Mongo Express UI (Port: 8081) - Database görüntüleme ve yönetim
+    - TechnologyStoreReviews database
+    - ProductReviews collection
 
 ## 🔄 Event-Driven Architecture Flow (Tam Akış)
 
