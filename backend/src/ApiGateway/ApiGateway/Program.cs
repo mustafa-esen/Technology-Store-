@@ -32,7 +32,12 @@ try
 
     // Swagger for Ocelot
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerForOcelot(builder.Configuration);
+    builder.Services.AddSwaggerForOcelot(builder.Configuration,
+        (o) =>
+        {
+            o.GenerateDocsForAggregates = false;
+            o.GenerateDocsForGatewayItSelf = false;
+        });
 
     // JWT Authentication
     var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -117,7 +122,6 @@ try
     app.UseSwaggerForOcelotUI(opt =>
     {
         opt.PathToSwaggerGenerator = "/swagger/docs";
-        opt.ReConfigureUpstreamSwaggerJson = AlterUpstreamSwaggerJson;
     });
 
     // Ocelot middleware
