@@ -11,6 +11,7 @@ import {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
+  CreditCard,
 } from "@/types";
 
 // Tüm istekler API Gateway üzerinden geçsin
@@ -75,7 +76,9 @@ export const ProductService = {
       id: (p.id ?? idx).toString(),
       price: Number(p.price ?? 0),
       category: p.category ?? p.categoryName ?? "General",
+      categoryId: p.categoryId ?? p.category?.id ?? p.categoryID,
       brand: p.brand ?? fallbackBrands[idx % fallbackBrands.length],
+      imageUrl: p.imageUrl,
     }));
   },
 
@@ -87,8 +90,24 @@ export const ProductService = {
       id: (p?.id ?? id).toString(),
       price: Number(p?.price ?? 0),
       category: p?.category ?? p?.categoryName ?? "General",
+      categoryId: p?.categoryId ?? p?.category?.id ?? p?.categoryID,
       brand: p?.brand ?? fallbackBrands[0],
+      imageUrl: p?.imageUrl,
     };
+  },
+
+  create: async (payload: Partial<Product>): Promise<Product> => {
+    const res = await api.post("/products", payload);
+    return res.data;
+  },
+
+  update: async (id: string, payload: Partial<Product>): Promise<Product> => {
+    const res = await api.put(`/products/${id}`, payload);
+    return res.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/products/${id}`);
   },
 };
 
@@ -97,6 +116,20 @@ export const CategoryService = {
   getAll: async (): Promise<Category[]> => {
     const res = await api.get("/categories");
     return Array.isArray(res.data) ? res.data : [];
+  },
+
+  create: async (payload: Partial<Category>): Promise<Category> => {
+    const res = await api.post("/categories", payload);
+    return res.data;
+  },
+
+  update: async (id: string, payload: Partial<Category>): Promise<Category> => {
+    const res = await api.put(`/categories/${id}`, payload);
+    return res.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/categories/${id}`);
   },
 };
 
@@ -186,5 +219,51 @@ export const PaymentService = {
   getPaymentsByUserId: async (userId: string): Promise<Payment[]> => {
     const res = await api.get(`/payments/user/${userId}`);
     return Array.isArray(res.data) ? res.data : [];
+  },
+};
+
+// ==================== CREDIT CARD SERVICE ====================
+export const CreditCardService = {
+  getDefault: async (): Promise<CreditCard | null> => {
+    try {
+      const res = await api.get("/CreditCards/default");
+      return res.data;
+    } catch (err: any) {
+      if (err?.response?.status === 404) return null;
+      throw err;
+    }
+  },
+
+  list: async (): Promise<CreditCard[]> => {
+    const res = await api.get("/CreditCards");
+    return Array.isArray(res.data) ? res.data : [];
+  },
+
+  create: async (payload: {
+    cardHolderName: string;
+    cardNumber: string;
+    expiryMonth: number;
+    expiryYear: number;
+    cvv: string;
+    isDefault?: boolean;
+  }): Promise<CreditCard> => {
+    const res = await api.post("/CreditCards", payload);
+    return res.data;
+  },
+
+  update: async (
+    id: string,
+    payload: { cardHolderName: string; expiryMonth: string | number; expiryYear: string | number }
+  ): Promise<CreditCard> => {
+    const res = await api.put(`/CreditCards/${id}`, payload);
+    return res.data;
+  },
+
+  setDefault: async (id: string): Promise<void> => {
+    await api.put(`/CreditCards/${id}/set-default`);
+  },
+
+  remove: async (id: string): Promise<void> => {
+    await api.delete(`/CreditCards/${id}`);
   },
 };

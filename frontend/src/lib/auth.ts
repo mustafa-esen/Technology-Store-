@@ -9,9 +9,19 @@ export function saveAuthData(response: AuthResponse): void {
   if (typeof window === "undefined") return;
 
   const token = response.token || response.accessToken;
-  const userId = response.userId || response.id || response.user?.id;
+  let userId = response.userId || response.id || response.user?.id;
   const email = response.user?.email;
   const refreshToken = response.refreshToken;
+
+  // Decode token for nameidentifier if backend sadece JWT döndürdüyse
+  if (!userId && token) {
+    const decoded = decodeToken(token) as any;
+    userId =
+      decoded?.sub ||
+      decoded?.nameid ||
+      decoded?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ||
+      decoded?.["http://schemas.microsoft.com/identity/claims/objectidentifier"];
+  }
 
   if (token) localStorage.setItem(TOKEN_KEY, token);
   if (userId) localStorage.setItem(USER_ID_KEY, userId);
@@ -83,16 +93,27 @@ export function isTokenExpired(token?: string | null): boolean {
 
 export function getCurrentUser(): Partial<User> | null {
   const token = getToken();
-  const userId = getUserId();
+  let userId = getUserId();
   const email = getUserEmail();
 
   if (!token || !userId) return null;
 
   const decoded = decodeToken(token) as any;
-  const roles = decoded?.role
-    ? Array.isArray(decoded.role)
-      ? decoded.role
-      : [decoded.role as string]
+  if (!userId) {
+    userId =
+      decoded?.sub ||
+      decoded?.nameid ||
+      decoded?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ||
+      decoded?.["http://schemas.microsoft.com/identity/claims/objectidentifier"];
+  }
+  const roleClaim =
+    decoded?.role ||
+    decoded?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
+    decoded?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"];
+  const roles = roleClaim
+    ? Array.isArray(roleClaim)
+      ? roleClaim
+      : [roleClaim as string]
     : undefined;
 
   return {
