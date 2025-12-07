@@ -67,7 +67,7 @@ export default function RegisterPage() {
       const hasToken = res?.token || res?.accessToken;
       if (hasToken) {
         saveAuthData(res);
-        router.push("/");
+        window.location.href = "/";
       } else {
         router.push("/login");
       }

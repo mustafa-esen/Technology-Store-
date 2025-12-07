@@ -44,7 +44,7 @@ export default function LoginPage() {
       console.log("LOGIN RESPONSE KEYS:", Object.keys(res));
       saveAuthData(res);
       console.log("SAVED userId:", localStorage.getItem("userId"));
-      router.push("/");
+      window.location.href = "/";
     } catch (err: unknown) {
       setError(extractErrorMessage(err, t.error));
     } finally {

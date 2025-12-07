@@ -103,7 +103,9 @@ export default function OrdersPage() {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => {
-            const statusMeta = getOrderStatusMeta(normalizeOrderStatus(order.status));
+            const normalizedStatus = normalizeOrderStatus(order.status);
+            const statusMeta = getOrderStatusMeta(normalizedStatus);
+            const canCancel = ["PaymentReceived", "Processing"].includes(normalizedStatus);
             const amount =
               order.totalAmount ?? order.items?.reduce((sum, item) => sum + item.price * item.quantity, 0) ?? 0;
             const created = order.createdDate ? new Date(order.createdDate).toLocaleString() : "-";
@@ -162,14 +164,16 @@ export default function OrdersPage() {
                   >
                     Ödeme detaylarını gör
                   </Link>
-                  <button
-                    onClick={() => handleCancel(order.id)}
-                    disabled={cancelingId === order.id || loading}
-                    className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-border hover:bg-accent transition disabled:opacity-50"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {cancelingId === order.id ? "İşleniyor..." : "İade / İptal et"}
-                  </button>
+                  {canCancel && (
+                    <button
+                      onClick={() => handleCancel(order.id)}
+                      disabled={cancelingId === order.id || loading}
+                      className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-border hover:bg-accent transition disabled:opacity-50"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {cancelingId === order.id ? "İşleniyor..." : "İade / İptal et"}
+                    </button>
+                  )}
                 </div>
               </div>
             );

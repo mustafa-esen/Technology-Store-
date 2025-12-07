@@ -16,6 +16,7 @@ import { ProductService, CategoryService, BasketService } from "@/services/api";
 import { getUserId } from "@/lib/auth";
 import { extractErrorMessage } from "@/lib/errors";
 import { Product, Category } from "@/types";
+import { formatCurrency } from "@/lib/utils";
 
 const copy = {
   badge: "Yeni sezon · Özenle seçilmiş teknoloji",
@@ -255,10 +256,16 @@ export default function Home() {
                   <Link href={`/products/${product.id}`} className="block">
                     <div className="relative">
                       <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-10 flex items-center justify-center h-64 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-black/10"></div>
-                        <span className="text-5xl font-black text-white relative z-10">
-                          {product.brand || "Marka"}
-                        </span>
+                        {product.imageUrl ? (
+                          <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
+                        ) : (
+                          <>
+                            <div className="absolute inset-0 bg-black/10"></div>
+                            <span className="text-5xl font-black text-white relative z-10">
+                              {product.brand || "Marka"}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -268,7 +275,7 @@ export default function Home() {
                       </h3>
 
                       <div className="flex items-baseline gap-2 mb-4">
-                        <span className="text-3xl font-black text-cyan-300">₺{Number(product.price).toFixed(2)}</span>
+                        <span className="text-3xl font-black text-cyan-300">{formatCurrency(Number(product.price))}</span>
                       </div>
                     </div>
                   </Link>

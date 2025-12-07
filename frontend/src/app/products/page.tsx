@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { Search, Filter, Grid3x3, List, ShoppingCart, CheckCircle2, AlertCircle } from "lucide-react";
 import { getUserId } from "@/lib/auth";
 import { extractErrorMessage } from "@/lib/errors";
+import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/types";
 
 const text = {
@@ -209,8 +210,12 @@ export default function ProductsPage() {
                 href={`/products/${product.id}`}
                 className="group bg-slate-900 border border-white/10 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-2"
               >
-                <div className="bg-gradient-to-br from-blue-500 to-purple-600 h-56 flex items-center justify-center">
-                  <span className="text-white text-4xl font-bold">{product.brand || "Marka"}</span>
+                <div className="bg-gradient-to-br from-blue-500 to-purple-600 h-56 flex items-center justify-center overflow-hidden">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white text-4xl font-bold">{product.brand || "Marka"}</span>
+                  )}
                 </div>
                 <div className="p-5">
                   <p className="text-xs font-semibold text-blue-400 mb-1">{product.category}</p>
@@ -220,7 +225,7 @@ export default function ProductsPage() {
                   <p className="text-sm text-slate-300 mb-3 line-clamp-2">{product.description}</p>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-black text-cyan-300">₺{product.price.toFixed(2)}</span>
+                    <span className="text-2xl font-black text-cyan-300">{formatCurrency(product.price)}</span>
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -244,8 +249,12 @@ export default function ProductsPage() {
                 href={`/products/${product.id}`}
                 className="group bg-slate-900 border border-white/10 rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden flex"
               >
-                <div className="bg-gradient-to-br from-blue-500 to-purple-600 w-64 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-4xl font-bold">{product.brand || "Marka"}</span>
+                <div className="bg-gradient-to-br from-blue-500 to-purple-600 w-64 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white text-4xl font-bold">{product.brand || "Marka"}</span>
+                  )}
                 </div>
                 <div className="p-6 flex-grow flex items-center justify-between">
                   <div className="flex-grow">
@@ -254,7 +263,7 @@ export default function ProductsPage() {
                     <p className="text-slate-300 mb-3">{product.description}</p>
                   </div>
                   <div className="text-right ml-6">
-                    <p className="text-3xl font-black text-cyan-300 mb-4">₺{product.price.toFixed(2)}</p>
+                    <p className="text-3xl font-black text-cyan-300 mb-4">{formatCurrency(product.price)}</p>
                     <button
                       onClick={(e) => {
                         e.preventDefault();
