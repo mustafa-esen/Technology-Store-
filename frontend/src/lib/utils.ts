@@ -24,7 +24,7 @@ const PAYMENT_STATUS_META: Record<string, StatusMeta> = {
   Refunded: { label: "İade Edildi", badge: "bg-purple-500/15 text-purple-300", description: "Ödeme iade edildi" },
 };
 
-// Backend enum değerlerini string'e çevirir (0 -> "Pending", 1 -> "PaymentReceived" vb.)
+// Backend enum -> string map (sayı ile gelebilir)
 const ORDER_STATUS_MAP: Record<number, string> = {
   0: "Pending",
   1: "PaymentReceived",
@@ -35,24 +35,31 @@ const ORDER_STATUS_MAP: Record<number, string> = {
   6: "Failed",
 };
 
-/**
- * Backend'den gelen order status'u normalize eder
- * Backend hem string hem de number olarak dönebiliyor
- */
+const PAYMENT_STATUS_MAP: Record<number, string> = {
+  0: "Pending",
+  1: "Processing",
+  2: "Success",
+  3: "Failed",
+  4: "Refunded",
+};
+
 export function normalizeOrderStatus(status: string | number | undefined | null): string {
   if (status === undefined || status === null) return "Pending";
-
-  // Number ise map'ten çevir
-  if (typeof status === "number") {
-    return ORDER_STATUS_MAP[status] ?? "Pending";
-  }
-
-  // String ama sayı formatında ise
+  if (typeof status === "number") return ORDER_STATUS_MAP[status] ?? "Pending";
   if (/^\d+$/.test(status)) {
     const asNum = Number(status);
     return ORDER_STATUS_MAP[asNum] ?? "Pending";
   }
+  return status || "Pending";
+}
 
+export function normalizePaymentStatus(status: string | number | undefined | null): string {
+  if (status === undefined || status === null) return "Pending";
+  if (typeof status === "number") return PAYMENT_STATUS_MAP[status] ?? "Pending";
+  if (/^\d+$/.test(status)) {
+    const asNum = Number(status);
+    return PAYMENT_STATUS_MAP[asNum] ?? "Pending";
+  }
   return status || "Pending";
 }
 

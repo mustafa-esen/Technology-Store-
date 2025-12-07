@@ -35,7 +35,7 @@ export default function AdminOrdersPage() {
         setOrders(ordersData);
         setFilteredOrders(ordersData);
       } catch (err: unknown) {
-        setError(extractErrorMessage(err, "Failed to load orders"));
+        setError(extractErrorMessage(err, "Siparişler yüklenemedi"));
       } finally {
         setLoading(false);
       }
@@ -47,16 +47,17 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     let filtered = orders;
 
-    // Search filter
+    // Arama
     if (searchTerm) {
       filtered = filtered.filter(
         (order) =>
           order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          order.userId.toLowerCase().includes(searchTerm.toLowerCase())
+          order.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (userMap[order.userId]?.email || "").toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Status filter
+    // Durum filtresi
     if (statusFilter !== "all") {
       filtered = filtered.filter((order) => order.status.toString() === statusFilter);
     }
@@ -101,27 +102,27 @@ export default function AdminOrdersPage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Package className="h-8 w-8 text-cyan-400" />
-            <h1 className="text-4xl font-black">Order Management</h1>
+            <h1 className="text-4xl font-black">Sipariş Yönetimi</h1>
           </div>
-          <p className="text-slate-400">View and manage all customer orders</p>
+          <p className="text-slate-400">Tüm müşteri siparişlerini görüntüle ve yönet</p>
         </div>
 
-        {/* Filters */}
+        {/* Filtreler */}
         <div className="bg-slate-800/50 rounded-xl p-6 mb-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Search */}
+            {/* Arama */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search by Order ID or User ID..."
+                placeholder="Sipariş ID veya kullanıcı e-postası ile ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            {/* Status Filter */}
+            {/* Durum filtresi */}
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <select
@@ -129,40 +130,42 @@ export default function AdminOrdersPage() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Status ({getStatusCount("all")})</option>
-                <option value="0">Pending ({getStatusCount("0")})</option>
-                <option value="1">Confirmed ({getStatusCount("1")})</option>
-                <option value="2">Shipped ({getStatusCount("2")})</option>
-                <option value="3">Delivered ({getStatusCount("3")})</option>
-                <option value="4">Cancelled ({getStatusCount("4")})</option>
+                <option value="all">Tüm Durumlar ({getStatusCount("all")})</option>
+                <option value="0">Beklemede ({getStatusCount("0")})</option>
+                <option value="1">Ödeme Alındı ({getStatusCount("1")})</option>
+                <option value="2">Hazırlanıyor ({getStatusCount("2")})</option>
+                <option value="3">Kargoda ({getStatusCount("3")})</option>
+                <option value="4">Teslim ({getStatusCount("4")})</option>
+                <option value="5">İptal ({getStatusCount("5")})</option>
+                <option value="6">Başarısız ({getStatusCount("6")})</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Orders Table */}
+        {/* Sipariş Tablosu */}
         <div className="bg-slate-800/50 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-slate-900/80 border-b border-slate-700">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    Order ID
+                    Sipariş ID
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    User
+                    Kullanıcı
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    Status
+                    Durum
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    Total
+                    Tutar
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    Date
+                    Tarih
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    Actions
+                    İşlemler
                   </th>
                 </tr>
               </thead>
@@ -170,7 +173,7 @@ export default function AdminOrdersPage() {
                 {filteredOrders.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                      No orders found
+                    Sipariş bulunamadı
                     </td>
                   </tr>
                 ) : (
@@ -199,7 +202,7 @@ export default function AdminOrdersPage() {
                           className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
                         >
                           <Eye className="h-4 w-4" />
-                          View
+                          Görüntüle
                         </button>
                       </td>
                     </tr>
@@ -211,12 +214,12 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      {/* Order Detail Modal */}
+      {/* Sipariş Detay Modalı */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="bg-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-slate-900 px-6 py-4 border-b border-slate-700 flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Order Details</h2>
+              <h2 className="text-2xl font-bold">Sipariş Detayı</h2>
               <button
                 onClick={() => setSelectedOrder(null)}
                 className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
@@ -229,7 +232,7 @@ export default function AdminOrdersPage() {
               {/* Order Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-slate-400">Order ID</p>
+                  <p className="text-sm text-slate-400">Sipariş ID</p>
                   <p className="font-mono text-cyan-300">{selectedOrder.id}</p>
                 </div>
                 <div>
@@ -254,7 +257,7 @@ export default function AdminOrdersPage() {
 
               {/* Items */}
               <div>
-                <h3 className="font-bold text-lg mb-3">Order Items</h3>
+                <h3 className="font-bold text-lg mb-3">Ürünler</h3>
                 <div className="space-y-2">
                   {selectedOrder.items.map((item, idx) => (
                     <div
@@ -273,10 +276,10 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
-              {/* Shipping Address */}
+              {/* Teslimat Adresi */}
               {selectedOrder.shippingAddress && (
                 <div>
-                  <h3 className="font-bold text-lg mb-2">Shipping Address</h3>
+                  <h3 className="font-bold text-lg mb-2">Teslimat Adresi</h3>
                   <div className="bg-slate-900 rounded-lg p-4 text-sm">
                     <p>{selectedOrder.shippingAddress.fullName}</p>
                     <p className="text-slate-300">{selectedOrder.shippingAddress.addressLine}</p>

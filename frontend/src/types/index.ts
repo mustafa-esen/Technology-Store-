@@ -146,11 +146,13 @@ export interface Payment {
   userId: string;
   amount: number;
   currency: string;
-  status: PaymentStatus | string;
+  status: PaymentStatus | string | number;
   transactionId?: string;
   failureReason?: string;
   processedDate?: string;
   createdDate?: string;
+  paymentMethod?: string;
+  cardHolderName?: string;
 }
 
 export interface CreditCard {
