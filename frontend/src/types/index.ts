@@ -4,6 +4,11 @@ export interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  phoneNumber?: string;
+  emailConfirmed?: boolean;
+  isActive?: boolean;
+  createdAt?: string;
+  lastLoginAt?: string;
   roles?: string[];
 }
 
@@ -141,11 +146,13 @@ export interface Payment {
   userId: string;
   amount: number;
   currency: string;
-  status: PaymentStatus | string;
+  status: PaymentStatus | string | number;
   transactionId?: string;
   failureReason?: string;
   processedDate?: string;
   createdDate?: string;
+  paymentMethod?: string;
+  cardHolderName?: string;
 }
 
 export interface CreditCard {

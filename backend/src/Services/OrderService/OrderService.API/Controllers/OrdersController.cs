@@ -1,9 +1,11 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrderService.Application.DTOs;
 using OrderService.Application.Features.Orders.Commands.CancelOrder;
 using OrderService.Application.Features.Orders.Commands.CreateOrder;
 using OrderService.Application.Features.Orders.Commands.UpdateOrderStatus;
+using OrderService.Application.Features.Orders.Queries.GetAllOrders;
 using OrderService.Application.Features.Orders.Queries.GetOrder;
 using OrderService.Application.Features.Orders.Queries.GetUserOrders;
 
@@ -70,6 +72,17 @@ public class OrdersController : ControllerBase
         _logger.LogInformation("Getting orders for user: {UserId}", userId);
 
         var query = new GetUserOrdersQuery { UserId = userId };
+        var result = await _mediator.Send(query);
+
+        return Ok(result);
+    }
+
+    [HttpGet("all")]
+    public async Task<ActionResult<List<OrderDto>>> GetAllOrders()
+    {
+        _logger.LogInformation("Admin getting all orders");
+
+        var query = new GetAllOrdersQuery();
         var result = await _mediator.Send(query);
 
         return Ok(result);

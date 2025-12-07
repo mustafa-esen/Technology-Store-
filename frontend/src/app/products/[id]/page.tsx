@@ -181,24 +181,25 @@ export default function ProductDetailPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Image */}
-          <div className="space-y-4">
+          <div>
             <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-16 flex items-center justify-center min-h-[500px] relative overflow-hidden group">
-              <div className="absolute inset-0 bg-black/10"></div>
-              <div className="relative z-10 text-white text-6xl font-bold">{product.brand || "Tech"}</div>
+              {product.imageUrl ? (
+                <img 
+                  src={product.imageUrl} 
+                  alt={product.name} 
+                  className="absolute inset-0 w-full h-full object-cover rounded-2xl" 
+                />
+              ) : (
+                <>
+                  <div className="absolute inset-0 bg-black/10"></div>
+                  <div className="relative z-10 text-white text-6xl font-bold">{product.brand || "Tech"}</div>
+                </>
+              )}
               {discount > 0 && (
                 <div className="absolute top-6 right-6 bg-red-500 text-white px-4 py-2 rounded-xl font-bold text-lg shadow-xl">
                   {discount}% OFF
                 </div>
               )}
-            </div>
-            {/* Thumbnail placeholder */}
-            <div className="grid grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="bg-slate-800 rounded-lg h-24 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
-                ></div>
-              ))}
             </div>
           </div>
 

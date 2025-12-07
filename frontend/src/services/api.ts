@@ -12,6 +12,7 @@ import {
   RegisterRequest,
   AuthResponse,
   CreditCard,
+  User,
 } from "@/types";
 
 // Tüm istekler API Gateway üzerinden geçsin
@@ -203,6 +204,12 @@ export const OrderService = {
     return Array.isArray(res.data) ? res.data : [];
   },
 
+  // Admin only
+  getAllOrders: async (): Promise<Order[]> => {
+    const res = await api.get("/orders/all");
+    return Array.isArray(res.data) ? res.data : [];
+  },
+
   cancelOrder: async (orderId: string, reason: string): Promise<Order> => {
     const res = await api.put(`/orders/${orderId}/cancel`, { reason });
     return res.data;
@@ -218,6 +225,12 @@ export const PaymentService = {
 
   getPaymentsByUserId: async (userId: string): Promise<Payment[]> => {
     const res = await api.get(`/payments/user/${userId}`);
+    return Array.isArray(res.data) ? res.data : [];
+  },
+
+  // Admin only
+  getAllPayments: async (): Promise<Payment[]> => {
+    const res = await api.get("/payments/all");
     return Array.isArray(res.data) ? res.data : [];
   },
 };
@@ -265,5 +278,14 @@ export const CreditCardService = {
 
   remove: async (id: string): Promise<void> => {
     await api.delete(`/CreditCards/${id}`);
+  },
+};
+
+// ==================== USER SERVICE (Admin) ====================
+export const UserService = {
+  // Admin only
+  getAllUsers: async (): Promise<User[]> => {
+    const res = await api.get("/auth/users");
+    return Array.isArray(res.data) ? res.data : [];
   },
 };
