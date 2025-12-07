@@ -46,6 +46,14 @@ public class OrderRepository : IOrderRepository
             .ToListAsync();
     }
 
+    public async Task<List<Order>> GetAllAsync()
+    {
+        return await _context.Orders
+            .Include(o => o.Items)
+            .OrderByDescending(o => o.CreatedDate)
+            .ToListAsync();
+    }
+
     public async Task<Order> CreateAsync(Order order)
     {
         await _context.Orders.AddAsync(order);

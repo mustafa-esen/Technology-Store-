@@ -54,4 +54,13 @@ public class AuthController : ControllerBase
             Roles = roles
         });
     }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("users")]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        var query = new IdentityService.Application.Features.Users.Queries.GetAllUsers.GetAllUsersQuery();
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
 }

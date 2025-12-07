@@ -56,4 +56,13 @@ public class UserRepository : IUserRepository
             .Select(ur => ur.Role.Name)
             .ToListAsync();
     }
+
+    public async Task<List<User>> GetAllAsync()
+    {
+        return await _context.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .OrderByDescending(u => u.CreatedAt)
+            .ToListAsync();
+    }
 }

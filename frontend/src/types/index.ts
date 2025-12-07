@@ -4,6 +4,11 @@ export interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  phoneNumber?: string;
+  emailConfirmed?: boolean;
+  isActive?: boolean;
+  createdAt?: string;
+  lastLoginAt?: string;
   roles?: string[];
 }
 

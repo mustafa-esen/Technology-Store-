@@ -9,6 +9,7 @@ public interface IOrderRepository
     Task<Order?> GetByIdWithItemsAsync(Guid orderId);
     Task<List<Order>> GetUserOrdersAsync(string userId);
     Task<List<Order>> GetOrdersByStatusAsync(OrderStatus status);
+    Task<List<Order>> GetAllAsync();
     Task<Order> CreateAsync(Order order);
     Task<Order> UpdateAsync(Order order);
     Task<bool> DeleteAsync(Guid orderId);
