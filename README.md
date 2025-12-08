@@ -465,6 +465,26 @@ Tüm consumerlar 3 deneme × 5 saniye retry policy ile korunur.
 
 Tüm mikroservisler Docker containerları içinde çalışacak şekilde yapılandırıldı. Multi-stage Docker builds kullanılarak optimize edilmiş image'lar oluşturuldu.
 
+**⚠️ İlk Kurulum:**
+
+1. `.env.example` dosyasını kopyalayıp `.env` olarak kaydedin:
+
+```bash
+cp .env.example .env
+```
+
+2. `.env` dosyasını açıp şifreleri değiştirin:
+
+```env
+# Varsayılan değerler yerine güçlü şifreler belirleyin
+SQLSERVER_SA_PASSWORD=your_strong_password_here
+MONGODB_ROOT_PASSWORD=your_mongodb_password_here
+RABBITMQ_PASSWORD=your_rabbitmq_password_here
+JWT_SECRET_KEY=your_jwt_secret_key_here_at_least_32_characters
+```
+
+3. Tüm servisleri başlatın:
+
 ```bash
 # Tüm servisleri ve altyapıyı tek komutla başlat
 docker-compose up -d
