@@ -8,6 +8,7 @@ import {
   Order,
   CreateOrderRequest,
   Payment,
+  Review,
   LoginRequest,
   RegisterRequest,
   AuthResponse,
@@ -232,6 +233,34 @@ export const PaymentService = {
   getAllPayments: async (): Promise<Payment[]> => {
     const res = await api.get("/payments/all");
     return Array.isArray(res.data) ? res.data : [];
+  },
+};
+
+// ==================== REVIEW SERVICE ====================
+export const ReviewService = {
+  getByProduct: async (productId: string): Promise<Review[]> => {
+    const res = await api.get(`/reviews/product/${productId}`);
+    return Array.isArray(res.data) ? res.data : [];
+  },
+
+  // Admin only (backend hazır olduğunda 200 dönecek; 404 gelirse boş liste döner)
+  getAll: async (): Promise<Review[]> => {
+    try {
+      const res = await api.get("/reviews");
+      return Array.isArray(res.data) ? res.data : [];
+    } catch (err: any) {
+      if (err?.response?.status === 404 || err?.response?.status === 401) return [];
+      throw err;
+    }
+  },
+
+  create: async (payload: { productId: string; comment: string; rating: number; imageUrls?: string[] }): Promise<Review> => {
+    const res = await api.post("/reviews", payload);
+    return res.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/reviews/${id}`);
   },
 };
 

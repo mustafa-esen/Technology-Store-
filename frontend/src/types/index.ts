@@ -155,6 +155,18 @@ export interface Payment {
   cardHolderName?: string;
 }
 
+// ==================== REVIEW TYPES ====================
+export interface Review {
+  id: string;
+  productId: string;
+  userId: string;
+  comment: string;
+  rating: number;
+  imageUrls: string[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface CreditCard {
   id: string;
   cardHolderName: string;

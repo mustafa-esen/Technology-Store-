@@ -4,12 +4,12 @@ import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, ArrowLeft, Check, ChevronRight, Zap, Award, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
-import { BasketService, ProductService } from "@/services/api";
+import { BasketService, ProductService, ReviewService } from "@/services/api";
 import { useLang } from "@/hooks/useLang";
 import { getUserId } from "@/lib/auth";
 import { extractErrorMessage } from "@/lib/errors";
 import { formatCurrency } from "@/lib/utils";
-import { Product } from "@/types";
+import { Product, Review } from "@/types";
 
 // API'den gelen ürün verisi için genişletilmiş tip
 interface ProductDetail extends Product {
@@ -66,6 +66,11 @@ export default function ProductDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [comment, setComment] = useState("");
+  const [rating, setRating] = useState(5);
 
   // Merkezi auth fonksiyonundan userId al
   const userId = getUserId() || "";
@@ -92,6 +97,22 @@ export default function ProductDetailPage() {
     fetchProduct();
   }, [productId]);
 
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        setReviewError(null);
+        setReviewLoading(true);
+        const list = await ReviewService.getByProduct(productId);
+        setReviews(list);
+      } catch (err: unknown) {
+        setReviewError(extractErrorMessage(err, lang === "tr" ? "Yorumlar yüklenemedi" : "Could not load reviews"));
+      } finally {
+        setReviewLoading(false);
+      }
+    };
+    loadReviews();
+  }, [productId, lang]);
+
   const handleAddToCart = async () => {
     setInfo(null);
     setError(null);
@@ -112,6 +133,31 @@ export default function ProductDetailPage() {
       setError(extractErrorMessage(err, lang === "tr" ? "Sepete eklenemedi" : "Could not add to cart"));
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleAddReview = async () => {
+    if (!userId) {
+      setReviewError(lang === "tr" ? "Yorum eklemek için giriş yap" : "Login to add a review");
+      return;
+    }
+    if (!comment.trim()) {
+      setReviewError(lang === "tr" ? "Yorum boş olamaz" : "Comment cannot be empty");
+      return;
+    }
+    try {
+      setReviewError(null);
+      const created = await ReviewService.create({
+        productId,
+        comment: comment.trim(),
+        rating,
+        imageUrls: [],
+      });
+      setReviews((prev) => [created, ...prev]);
+      setComment("");
+      setRating(5);
+    } catch (err: unknown) {
+      setReviewError(extractErrorMessage(err, lang === "tr" ? "Yorum eklenemedi" : "Could not add review"));
     }
   };
 
@@ -324,9 +370,9 @@ export default function ProductDetailPage() {
           <div className="border-b border-white/10">
             <div className="flex gap-8">
               {[
-                { key: "description", label: "Description" },
-                { key: "specs", label: "Specifications" },
-                { key: "reviews", label: "Reviews" },
+                { key: "description", label: "Açıklama" },
+                { key: "specs", label: "Özellikler" },
+                { key: "reviews", label: "Yorumlar" },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -366,13 +412,64 @@ export default function ProductDetailPage() {
             )}
 
             {activeTab === "reviews" && (
-              <div className="text-center py-12">
-                <Star className="h-16 w-16 mx-auto text-slate-500 mb-4" />
-                                <h3 className="text-xl font-bold text-white mb-2">{t.noReviews}</h3>
-                                <p className="text-slate-300 mb-6">Be the first to review this product!</p>
-                                <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                  {t.writeReview}
-                </button>
+              <div className="space-y-6">
+                {reviewError && <p className="text-red-400 text-sm">{reviewError}</p>}
+                <div className="bg-slate-900/60 border border-white/10 rounded-xl p-4">
+                  <h3 className="font-bold text-lg mb-2">Yorum Ekle</h3>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-300">Puan:</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={5}
+                        value={rating}
+                        onChange={(e) => setRating(Math.max(1, Math.min(5, Number(e.target.value))))}
+                        className="w-16 bg-slate-800 border border-white/10 rounded px-2 py-1 text-white"
+                      />
+                      <Star className="h-4 w-4 text-yellow-400" />
+                    </div>
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Ürün deneyimini paylaş..."
+                      className="w-full bg-slate-800 border border-white/10 rounded px-3 py-2 text-white"
+                      rows={3}
+                    />
+                    <button
+                      onClick={handleAddReview}
+                      className="self-end px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-white disabled:opacity-50"
+                      disabled={reviewLoading}
+                    >
+                      {reviewLoading ? "Gönderiliyor..." : "Yorumu Gönder"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="font-bold text-lg">Yorumlar</h3>
+                  {reviewLoading ? (
+                    <div className="text-slate-300 text-sm">Yorumlar yükleniyor...</div>
+                  ) : reviews.length === 0 ? (
+                    <div className="text-slate-400 text-sm">Henüz yorum yok.</div>
+                  ) : (
+                    reviews.map((rev) => (
+                      <div key={rev.id} className="bg-slate-900/60 border border-white/10 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2 text-yellow-400">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`h-4 w-4 ${i < rev.rating ? "fill-yellow-400" : "text-slate-600"}`} />
+                            ))}
+                          </div>
+                          <span className="text-xs text-slate-400">
+                            {new Date(rev.createdAt).toLocaleDateString("tr-TR")}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-200">{rev.comment}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             )}
           </div>

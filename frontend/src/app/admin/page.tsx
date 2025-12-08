@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Package, ShoppingBag, CreditCard, Users, LayoutGrid, Layers } from "lucide-react";
-import { OrderService, PaymentService, UserService, ProductService, CategoryService } from "@/services/api";
+import { Package, ShoppingBag, CreditCard, Users, LayoutGrid, Layers, MessageSquare } from "lucide-react";
+import { OrderService, PaymentService, UserService, ProductService, CategoryService, ReviewService } from "@/services/api";
 
 export default function AdminDashboard() {
   const [orderCount, setOrderCount] = useState<number | null>(null);
@@ -11,22 +11,25 @@ export default function AdminDashboard() {
   const [userCount, setUserCount] = useState<number | null>(null);
   const [productCount, setProductCount] = useState<number | null>(null);
   const [categoryCount, setCategoryCount] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [orders, payments, users, products, categories] = await Promise.all([
+        const [orders, payments, users, products, categories, reviews] = await Promise.all([
           OrderService.getAllOrders(),
           PaymentService.getAllPayments(),
           UserService.getAllUsers(),
           ProductService.getAll(),
           CategoryService.getAll(),
+          ReviewService.getAll().catch(() => []),
         ]);
         setOrderCount(orders.length);
         setPaymentCount(payments.length);
         setUserCount(users.length);
         setProductCount(products.length);
         setCategoryCount(categories.length);
+        setReviewCount(reviews.length);
       } catch (err) {
         console.error("Failed to load admin stats:", err);
       }
@@ -74,6 +77,14 @@ export default function AdminDashboard() {
       href: "/admin/users",
       stat: userCount !== null ? `${userCount} kullanıcı` : "–",
       color: "purple",
+    },
+    {
+      title: "Yorum Yönetimi",
+      desc: "Ürün yorumlarını incele / sil",
+      icon: <MessageSquare className="h-10 w-10 text-amber-300" />,
+      href: "/admin/reviews",
+      stat: reviewCount !== null ? `${reviewCount} yorum` : "–",
+      color: "amber",
     },
   ];
 
