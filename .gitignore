@@ -1,0 +1,41 @@
+# .NET
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+nupkg/
+*.user
+*.suo
+bin/
+obj/
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+*.nupkg
+*.sql
+
+# Node
+node_modules/
+.next/
+out/
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Environment Variables
+.env
+
+# IDEs
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates

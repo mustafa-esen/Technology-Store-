@@ -1,0 +1,44 @@
+2025-11-29 11:51:41.073 +03:00 [INF] Now listening on: http://localhost:5002
+2025-11-29 11:51:41.098 +03:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-11-29 11:51:41.099 +03:00 [INF] Hosting environment: Development
+2025-11-29 11:51:41.100 +03:00 [INF] Content root path: C:\Users\musta\OneDrive\Masaüstü\TechnologyStore\backend\src\Services\BasketService\BasketService.API
+2025-11-29 11:51:47.713 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/ - null null
+2025-11-29 11:51:47.737 +03:00 [INF] Request: GET / started
+2025-11-29 11:51:47.740 +03:00 [INF] Request: GET / completed with status 404 in 3ms
+2025-11-29 11:51:47.745 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/ - 404 0 null 33.5334ms
+2025-11-29 11:51:47.756 +03:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5002/, Response status code: 404
+2025-11-29 11:51:58.676 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger?id=485e6cbd-d7be-4dca-b49d-0dcc7ef87165&vscodeBrowserReqId=1764406318671 - null null
+2025-11-29 11:51:58.679 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger?id=485e6cbd-d7be-4dca-b49d-0dcc7ef87165&vscodeBrowserReqId=1764406318671 - 301 0 null 3.1048ms
+2025-11-29 11:51:58.681 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/index.html - null null
+2025-11-29 11:51:58.731 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/index.html - 200 null text/html;charset=utf-8 49.4683ms
+2025-11-29 11:51:58.740 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/swagger-ui.css - null null
+2025-11-29 11:51:58.741 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/index.css - null null
+2025-11-29 11:51:58.741 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/swagger-ui-bundle.js - null null
+2025-11-29 11:51:58.741 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/swagger-ui-standalone-preset.js - null null
+2025-11-29 11:51:58.741 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/index.js - null null
+2025-11-29 11:51:58.748 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/index.js - 200 null application/javascript;charset=utf-8 7.04ms
+2025-11-29 11:51:58.750 +03:00 [INF] Sending file. Request path: '/index.css'. Physical path: 'N/A'
+2025-11-29 11:51:58.751 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/index.css - 200 202 text/css 10.5661ms
+2025-11-29 11:51:58.753 +03:00 [INF] Sending file. Request path: '/swagger-ui-standalone-preset.js'. Physical path: 'N/A'
+2025-11-29 11:51:58.753 +03:00 [INF] Sending file. Request path: '/swagger-ui.css'. Physical path: 'N/A'
+2025-11-29 11:51:58.756 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/swagger-ui-standalone-preset.js - 200 230007 text/javascript 14.4693ms
+2025-11-29 11:51:58.756 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/swagger-ui.css - 200 152035 text/css 15.8908ms
+2025-11-29 11:51:58.761 +03:00 [INF] Sending file. Request path: '/swagger-ui-bundle.js'. Physical path: 'N/A'
+2025-11-29 11:51:58.762 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/swagger-ui-bundle.js - 200 1426050 text/javascript 21.3584ms
+2025-11-29 11:51:58.896 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/v1/swagger.json - null null
+2025-11-29 11:51:58.958 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 62.7419ms
+2025-11-29 11:53:22.834 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/v1/swagger.json - null null
+2025-11-29 11:53:22.837 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 3.3024ms
+2025-11-29 12:15:42.669 +03:00 [INF] Now listening on: http://localhost:5002
+2025-11-29 12:15:42.694 +03:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-11-29 12:15:42.695 +03:00 [INF] Hosting environment: Development
+2025-11-29 12:15:42.695 +03:00 [INF] Content root path: C:\Users\musta\OneDrive\Masaüstü\TechnologyStore\backend\src\Services\BasketService\BasketService.API
+2025-11-29 12:16:00.484 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger?id=185f8510-bebd-4a2b-ad56-b4b793027507&vscodeBrowserReqId=1764407760453 - null null
+2025-11-29 12:16:00.507 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger?id=185f8510-bebd-4a2b-ad56-b4b793027507&vscodeBrowserReqId=1764407760453 - 301 0 null 24.0454ms
+2025-11-29 12:16:00.517 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/index.html - null null
+2025-11-29 12:16:00.569 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/index.html - 200 null text/html;charset=utf-8 51.9062ms
+2025-11-29 12:16:00.579 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/index.js - null null
+2025-11-29 12:16:00.583 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/index.js - 200 null application/javascript;charset=utf-8 3.8771ms
+2025-11-29 12:16:00.640 +03:00 [INF] Request starting HTTP/1.1 GET http://localhost:5002/swagger/v1/swagger.json - null null
+2025-11-29 12:16:00.700 +03:00 [INF] Request finished HTTP/1.1 GET http://localhost:5002/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 60.804ms
+2025-11-29 12:16:49.626 +03:00 [INF] Application is shutting down...
