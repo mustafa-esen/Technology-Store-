@@ -2,9 +2,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReviewService.Application.DTOs;
+using ReviewService.Application.Features.Reviews.Commands.AdminDeleteReview;
 using ReviewService.Application.Features.Reviews.Commands.CreateReview;
 using ReviewService.Application.Features.Reviews.Commands.DeleteReview;
 using ReviewService.Application.Features.Reviews.Commands.UpdateReview;
+using ReviewService.Application.Features.Reviews.Queries.GetAllReviews;
 using ReviewService.Application.Features.Reviews.Queries.GetReviewsByProduct;
 using ReviewService.Application.Features.Reviews.Queries.GetReviewsByUser;
 using System.Security.Claims;
@@ -96,5 +98,33 @@ public class ReviewsController : ControllerBase
 
         _logger.LogInformation("📋 Retrieved {Count} reviews for user {UserId}", result.Count, userId);
         return Ok(result);
+    }
+
+    [HttpGet("admin/all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<ReviewDto>>> GetAllReviews()
+    {
+        var query = new GetAllReviewsQuery();
+        var result = await _mediator.Send(query);
+
+        _logger.LogInformation("📋 Admin retrieved all {Count} reviews", result.Count);
+        return Ok(result);
+    }
+
+    [HttpDelete("admin/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AdminDeleteReview(string id)
+    {
+        var command = new AdminDeleteReviewCommand(id);
+        var result = await _mediator.Send(command);
+
+        if (!result)
+        {
+            _logger.LogWarning("❌ Admin: Review {Id} not found", id);
+            return NotFound(new { message = "Review not found" });
+        }
+
+        _logger.LogInformation("✅ Admin deleted review {Id}", id);
+        return NoContent();
     }
 }

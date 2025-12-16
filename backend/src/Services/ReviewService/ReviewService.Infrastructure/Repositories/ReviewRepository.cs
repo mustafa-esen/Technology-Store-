@@ -21,6 +21,14 @@ public class ReviewRepository : IReviewRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<List<ProductReview>> GetAllAsync()
+    {
+        return await _context.Reviews
+            .Find(_ => true)
+            .SortByDescending(r => r.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<List<ProductReview>> GetByProductIdAsync(Guid productId)
     {
         return await _context.Reviews
